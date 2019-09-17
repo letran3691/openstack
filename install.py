@@ -46,8 +46,8 @@ os.system(str("sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/con
 #os.system('yum --enablerepo=centos-openstack-queens -y install mariadb-server')
 
 ##############################    COPY PRIVATE KEY   ###################################################################
-
-# os.system('ssh-copy-id -i /root/.ssh/id_rsa.pub root@'+ip_compute)
+os.system('ssh root@'+ip_compute+' mkdir /root/.ssh')
+os.system('ssh-copy-id -i /root/.ssh/id_rsa.pub root@'+ip_compute+':/root/.ssh')
 # os.system('ssh-copy-id -i /root/.ssh/id_rsa.pub root@'+ip_stogare)
 
 ############################## INSTALL MARIADB #########################################################################
