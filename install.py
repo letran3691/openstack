@@ -188,18 +188,20 @@ print("Install Glance")
 time.sleep(2)
 
 os.system("yum --enablerepo=centos-openstack-queens,epel -y install openstack-glance")
-os.system('mv /etc/glance/glance-api.conf /etc/glance/glance-api.conf.org ')
 
 ############################# config Glance ############################################################################
-
+os.system('mv /etc/glance/glance-api.conf /etc/glance/glance-api.conf.org ')
 glance_api ='/root/openstack/controller/glance-api.conf'
+
 subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',glance_api])
 subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',glance_api])
 os.system('cp /root/openstack/controller/glance-api.conf /etc/glance/')
 
 os.system('mv /etc/glance/glance-registry.conf /etc/glance/glance-registry.conf.org ')
-subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',glance_api])
-subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',glance_api])
+glance_registry='/root/openstack/controller/glance-registry.conf'
+
+subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',glance_registry])
+subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',glance_registry])
 os.system('cp /root/openstack/controller/glance-registry.conf /etc/glance/')
 
 
