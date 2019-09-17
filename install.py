@@ -240,16 +240,199 @@ os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova.* to no
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database nova_api;\"")
 os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_api.* to nova@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_api.* to mova@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_api.* to nova@'%' identified by"' \'' +pass_user_service+'\''';\"')
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database nova_placement;\"")
 os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_placement.* to nova@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_placement.* to mova@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_placement.* to nova@'%' identified by"' \'' +pass_user_service+'\''';\"')
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database nova_cell0;\"")
 os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_cell0.* to nova@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_cell0.* to mova@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_cell0.* to nova@'%' identified by"' \'' +pass_user_service+'\''';\"')
 os.system("mysql -uroot -p"+rootsql+ " -e \"flush privileges;\"")
+
+##################################### Install Nova and config services #################################################
+print('Install Nova services')
+time.sleep(2)
+
+os.system('yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova')
+
+print('Config Nova')
+time.sleep(2)
+
+###################################### config nova node controller #####################################################
+os.system('mv /etc/nova/nova.conf /etc/nova/nova.conf.org')
+
+con_nova_conf = '/root/openstack/controller/nova.conf'
+subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',con_nova_conf])
+subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',con_nova_conf])
+os.system('cp /root/openstack/controller/nova.conf /etc/glance/')
+
+print('Phan quyen nova')
+time.sleep(2)
+os.system('chmod 640 /etc/nova/nova.conf')
+os.system('chgrp nova /etc/nova/nova.conf')
+
+os.system('cp -f /root/openstack/controller/00-nova-placement-api.conf /etc/httpd/conf.d/')
+
+################################# 	Add Data into Database and start Nova services #####################################
+
+os.system('su -s /bin/bash nova -c "nova-manage api_db sync"')
+os.system('su -s /bin/bash nova -c "nova-manage cell_v2 map_cell0"')
+os.system('su -s /bin/bash nova -c "nova-manage db sync"')
+os.system('su -s /bin/bash nova -c "nova-manage cell_v2 create_cell --name cell1"')
+os.system('systemctl restart httpd')
+os.system('chown nova. /var/log/nova/nova-placement-api.log')
+
+os.system('''for service in api consoleauth conductor scheduler novncproxy; do
+systemctl start openstack-nova-$service
+systemctl enable openstack-nova-$service
+done''')
+os.system('source /root/keystonerc && openstack compute service list')
+
+############################## NODE compute ############################################################################
+
+print('Cai dat va cau hinh node compute'.upper())
+time.sleep(3)
+
+os.system('ssh root@'+ip_compute+' yum -y install centos-release-openstack-queens epel-release')
+os.system('ssh root@'+ip_compute+' sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo')
+os.system('ssh root@'+ip_compute+' yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova-compute')
+
+############################## config nova node compute ################################################################
+os.system('ssh root@'+ip_compute+' mv /etc/nova/nova.conf /etc/nova/nova.conf.org')
+com_nova_conf = '/root/openstack/compute/nova.conf'
+subprocess.call(['sed','--in-place',r's/ip_compute/'+ip_compute+'/g',com_nova_confnova_conf])
+subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',com_nova_confnova_conf])
+subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',com_nova_confnova_conf])
+os.system('scp /root/openstack/compute/nova.conf root@'+ip_compute+':/etc/nova/')
+os.system('ssh root@'+ip_compute+' chmod 640 /etc/nova/nova.conf')
+os.system('ssh root@'+ip_compute+' chgrp nova /etc/nova/nova.conf')
+
+############################## Start Nova Compute Service on node compute ##############################################
+os.system('ssh root@'+ip_compute+' systemctl restart openstack-nova-compute; systemctl enable openstack-nova-compute')
+
+############################## discover Compute Nodes ##################################################################
+print('discover Compute Node')
+time.sleep(2)
+os.system('source /root/keystonerc && su -s /bin/bash nova -c "nova-manage cell_v2 discover_hosts"')
+os.system('source /root/keystonerc && openstack compute service list')
+
+################################## Network Service (Neutron) ###########################################################
+
+print('Add user or service for Neutron on Keystone Server'.title())
+time.sleep(3)
+os.system('source /root/keystonerc && openstack user create --domain default --project service --password '+pass_user_service+' neutron')
+os.system('source /root/keystonerc && openstack role add --project service --user neutron admin')
+os.system('source /root/keystonerc && openstack service create --name neutron --description "OpenStack Networking service" network')
+os.system('source /root/keystonerc && openstack endpoint create --region RegionOne network public http://'+ip_controller+':9696')
+os.system('source /root/keystonerc && openstack endpoint create --region RegionOne network internal http://'+ip_controller+':9696')
+os.system('source /root/keystonerc && openstack endpoint create --region RegionOne network admin http://'+ip_controller+':9696')
+
+############################################## Add a User and Database on MariaDB for Neutron ##########################
+print('Add a User and Database on MariaDB for Neutron'.title())
+time.sleep(2)
+
+os.system("mysql -uroot -p"+rootsql+ " -e \"create database neutron_ml2;\"")
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on neutron_ml2.* to neutron@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on neutron_ml2.* to neutron@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"flush privileges;\"")
+
+########################################## Install neutron service #####################################################
+print('Install neutron service'.title())
+time.sleep(2)
+
+os.system('yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch')
+
+####################################### config neutro ##################################################################
+print('Config neutron'.title())
+time.sleep(2)
+
+os.system('mv /etc/neutron/neutron.conf /etc/neutron/neutron.conf.org')
+
+neutron = '/root/openstack/controller/neutron.conf'
+subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',neutron])
+subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',neutron])
+os.system('cp /root/openstack/controller/neutron.conf /etc/neutron/')
+
+###################################### phan quyen ######################################################################
+os.system('chmod 640 /etc/neutron/neutron.conf')
+os.system('chgrp neutron /etc/neutron/neutron.conf')
+
+l3_ini='/etc/neutron/l3_agent.ini'
+subprocess.call(["sed","--in-place",r"s/\#interface_driver = <None>/interface_driver = openvswitch/g",l3_ini])
+
+dhcp_ini='/etc/neutron/dhcp_agent.ini'
+subprocess.call(["sed","--in-place",r"s/\#interface_driver = <None>/interface_driver = openvswitch/g",dhcp_ini])
+subprocess.call(["sed","--in-place",r"s/\#dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq/dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq/g",dhcp_ini])
+subprocess.call(["sed","--in-place",r"s/\#enable_isolated_metadata = false/enable_isolated_metadata = true/g",dhcp_ini])
+
+metadata_ini='/etc/neutron/metadata_agent.ini'
+subprocess.call(["sed","--in-place",r"s/\#nova_metadata_host = 127.0.0.1/nova_metadata_host =" +ip_controller+"/g",metadata_ini])
+subprocess.call(["sed","--in-place",r"s/\#metadata_proxy_shared_secret =/metadata_proxy_shared_secret = metadata_secret/g",metadata_ini])
+subprocess.call(["sed","--in-place",r"s/\#memcache_servers = localhost:11211/memcache_servers =" +ip_controller+":11211/g",metadata_ini])
+
+ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
+subprocess.call(["sed","--in-place",r"s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g",ml2_ini])
+subprocess.call(["sed","--in-place",r"s/\#tenant_network_types = local/tenant_network_types =/g",ml2_ini])
+subprocess.call(["sed","--in-place",r"s/\#mechanism_drivers =/mechanism_drivers = openvswitch,l2population/g",ml2_ini])
+subprocess.call(["sed","--in-place",r"s/\#extension_drivers =/extension_drivers = port_security/g",ml2_ini])
+
+openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
+subprocess.call(["sed","--in-place",r"s/\#firewall_driver = <None>/firewall_driver = openvswitch/g",openvswitch_ini])
+subprocess.call(["sed","--in-place",r"s/\#enable_security_group = true/enable_security_group = true/g",openvswitch_ini])
+subprocess.call(["sed","--in-place",r"s/\#enable_ipset = true/enable_ipset = true/g",openvswitch_ini])
+
+ect_nova_conf='/etc/nova/nova.conf'
+subprocess.call(["sed","--in-place",r"s/\[DEFAULT]/\[DEFAULT]\nuse_neutron = True\nlinuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver\nfirewall_driver = nova.virt.firewall.NoopFirewallDriver\nvif_plugging_is_fatal = True\nvif_plugging_timeout = 300\n/g",ect_nova_conf])
+
+with open('/etc/nova/nova.conf', 'a+') as nova:
+    nova.write('''\n[neutron]\nauth_url = http://'''+ip_controller+''':5000
+                \nauth_type = password\nproject_domain_name = default
+                \nuser_domain_name = default
+                \nregion_name = RegionOne
+                \nproject_name = service
+                \nusername = neutron
+                \npassword = '''+pass_user_service+'''
+                \nservice_metadata_proxy = True
+                \nmetadata_proxy_shared_secret = metadata_secret''')
+
+################################ 	Start Neutron services #############################################################
+print('Start Neutron services')
+time.sleep(2)
+os.system('systemctl start openvswitch && systemctl enable openvswitch')
+os.system('ovs-vsctl add-br br-int')
+os.system('ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini')
+os.system('source /root/keystonerc && su -s /bin/bash neutron -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"')
+
+os.system('''for service in server dhcp-agent l3-agent metadata-agent openvswitch-agent; do 
+            systemctl start neutron-$service 
+            systemctl enable neutron-$service 
+            done''')
+os.system('systemctl restart openstack-nova-api openstack-nova-compute')
+
+os.system('source /root/keystonerc && openstack network agent list')
+
+##################################### Configure Horizon ################################################################
+print('Install Horizon.'.upper())
+time.sleep(3)
+os.system('yum --enablerepo=centos-openstack-queens,epel -y install openstack-dashboard')
+
+dashboard='/root/openstack/controller/local_settings'
+subprocess.call(["sed","--in-place",r"s/\#ALLOWED_HOSTS = ['horizon.example.com', 'localhost']/ALLOWED_HOSTS = ['"+ip_controller+"', 'localhost']/g",dashboard])
+subprocess.call(["sed","--in-place",r"s/\   	    'LOCATION': '192.168.100.10:11211',/\   	    'LOCATION': '"+ip_controller+":11211']/g",dashboard])
+subprocess.call(["sed","--in-place",r"s/OPENSTACK_HOST = \"192.168.100.10\"/OPENSTACK_HOST = \""+ip_controller+"\"/g",dashboard])
+
+dashboard_conf='/etc/httpd/conf.d/openstack-dashboard.conf'
+subprocess.call(["sed","--in-place",r"s/WSGISocketPrefix run\/wsgi/WSGISocketPrefix run\/wsgi\nWSGIApplicationGroup %{GLOBAL}/g",dashboard_conf])
+os.system('systemctl restart httpd')
+
+
+
+
+
+
+
 
 
 
