@@ -2,7 +2,9 @@
 
 import sys,os,time,fileinput,subprocess
 
-print('Chuan bi cho qua trinh cai dat va cau hinh .'.upper())
+print('Chuan bi cho qua trinh cai dat va cau hinh.\n'.upper())
+
+print('\t\t\tcanh bao chu y phan network tranh nham lan'.upper())
 time.sleep(3)
 ip_controller = input('Nhap ip controller node: ')
 ip_compute = input('Nhap ip compute node: ')
