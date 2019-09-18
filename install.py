@@ -8,16 +8,37 @@ ip_controller = input('Nhap ip controller node: ')
 ip_compute = input('Nhap ip compute node: ')
 ip_stogare = input('Nhap ip storage node: ')
 
+print('Dinh dang netmask: 8, 16, 24')
+netmask = input('Nhap sunetmask: ')
+gw = input('Nhap gateway: ')
+
 hn_controller = input('\nNhap hostname controller node: ')
 hn_compute = input('Nhap hostname compute node: ')
 hn_storage = input('Nhap hostname storage node: ')
 
-memcache_user = 'openstack'
-pass_memcache = input('\nNhap password memcache: ')
+rabbitmq_user = 'openstack'
+pass_rabbitmq = input('\nNhap password RabbitMQ: ')
 pass_admin = input('Nhap password admin: ')
 rootsql = input('Nhap password root sql: ')
-pass_user_service = input('Nhap password user services: ')
+pass_user_sql = input('Nhap password user sql: ')
+pass_project_user = input('Nhap password project user: ')
 
+
+
+with open('info','w+') as info:
+    info.write('''ip controller: '''+ip_controller+'''
+                \nip compute: '''+ip_compute+'''
+                \nip storage: '''+ip_stogare+'''
+                \nhostname controller: '''+hn_controller+'''
+                \nhostname compute: '''+hn_compute+'''
+                \nhostname storage: '''+hn_storage+'''
+                \nrabbitmq_user: openstack
+               \nPassword RabbitMQ: ''' +pass_rabbitmq+'''
+               \nPassword admin: '''+pass_admin+'''
+                \npassword root sql :'''+rootsql+'''
+                \nPassword user services: '''+pass_user_sql+'''
+                \npassword project user: '''+pass_project_user)
+    info.close()
 
 
 ############################ create key ssh ############################################################################
@@ -37,10 +58,12 @@ os.system('systemctl disable firewalld')
 os.system(str("sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"))
 os.system(str("sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"))
 
+print('chuan bi hoan tat - bat dau cai dat va cau hinh'.upper())
+time.sleep(3)
 ########################################################################################################################
 
-#os.system('yum -y install centos-release-openstack-queens epel-release && yum -y install  python36 python36-devel python36-setuptools ')
-#os.system(str("sed -i -e 's/enabled=1/enabled=0/g' /etc/yum.repos.d/CentOS-OpenStack-queens.repo "))
+#os.system('yum -y install centos-release-openstack-queens epel-release && yum -y install  python36 python36-devel python36-setuptools')
+os.system(str("sed -i -e 's/enabled=1/enabled=0/g' /etc/yum.repos.d/CentOS-OpenStack-queens.repo "))
 
 # install Mariadb
 #os.system('yum --enablerepo=centos-openstack-queens -y install mariadb-server')
@@ -85,29 +108,29 @@ os.system('yum --enablerepo=epel -y install rabbitmq-server memcached')
 os.system('systemctl start rabbitmq-server memcached')
 os.system('systemctl enable rabbitmq-server memcached')
 
-os.system('rabbitmqctl add_user '+memcache_user +' '+ pass_memcache)
-os.system('rabbitmqctl set_permissions '+memcache_user+' ".*" ".*" ".*"')
+os.system('rabbitmqctl add_user '+rabbitmq_user +' '+ pass_rabbitmq)
+os.system('rabbitmqctl set_permissions '+rabbitmq_user+' ".*" ".*" ".*"')
 
-print('Install RabbitMQ, Memcached done')
+print('\nInstall RabbitMQ, Memcached done')
 time.sleep(2)
 ######################### Add a User and Database on MariaDB for Keystone ##############################################
 
 ###### print("mysql -uroot -p"+rootsql+ " -e \"flush privileges;\"") ##### debug sql
 
-print('Add a User and Database on MariaDB for Keystone')
+print('\nAdd a User and Database on MariaDB for Keystone')
 
 time.sleep(2)
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database keystone;\"")
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on keystone.* to keystone@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on keystone.* to keystone@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on keystone.* to keystone@'localhost' identified by"' \'' +pass_user_sql+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on keystone.* to keystone@'%' identified by"' \'' +pass_user_sql+'\''';\"')
 os.system("mysql -uroot -p"+rootsql+ " -e \"flush privileges;\"")
 
 print('Add a User and Database on MariaDB for Keystone done ')
 time.sleep(2)
 ########################## 	Install Keystone ###########################################################################
 
-print('Install Keystone')
+print('\nInstall Keystone')
 
 time.sleep(2)
 
@@ -115,7 +138,7 @@ os.system('yum --enablerepo=centos-openstack-queens,epel -y install openstack-ke
 
 token_conf='/etc/keystone/keystone.conf'
 subprocess.call(["sed","--in-place",r"s/\#memcache_servers = localhost:11211/\nmemcache_servers = "+ip_controller+":11211/g",token_conf])
-subprocess.call(["sed","--in-place",r"s/\#connection = <None>/\nconnection = mysql+pymysql:\/\/keystone:"+pass_user_service+"@"+ip_controller+"\/keystone/g",token_conf])
+subprocess.call(["sed","--in-place",r"s/\#connection = <None>/\nconnection = mysql+pymysql:\/\/keystone:"+pass_user_sql+"@"+ip_controller+"\/keystone/g",token_conf])
 subprocess.call(['sed','--in-place',r's/\#bind =/\nprovider = fernet\n\n#bind =/',token_conf])
 
 os.system('su -s /bin/bash keystone -c "keystone-manage db_sync"')
@@ -127,11 +150,11 @@ os.system('ln -s /usr/share/keystone/wsgi-keystone.conf /etc/httpd/conf.d/')
 os.system('systemctl start httpd')
 os.system('systemctl enable httpd')
 
-print('Install Keystone done')
+print('\nInstall Keystone done')
 time.sleep(2)
 ###############################  Create and Load environment variables file ############################################
 
-print('environment variables file')
+print('\nEnvironment variables file')
 
 time.sleep(2)
 
@@ -154,19 +177,23 @@ os.system('source /root/keystonerc')
 
 ############################## Create Projects #########################################################################
 
-print('Create Projects')
+print('\nCreate Projects')
 
 time.sleep(2)
 
 os.system('source /root/keystonerc && openstack project create --domain default --description "Service Project" service ')
+
+
+print('\nconfirm settings')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack project list ')
 
 ############################ Add users and others for Glance in Keystone ###############################################
 
-print('Add Glance keytone')
+print('\nAdd Glance keytone')
 time.sleep(2)
 
-os.system("source /root/keystonerc && openstack user create --domain default --project service --password "+pass_user_service+" glance")
+os.system("source /root/keystonerc && openstack user create --domain default --project service --password "+pass_project_user+" glance")
 os.system("source /root/keystonerc && openstack role add --project service --user glance admin")
 os.system('source /root/keystonerc && openstack service create --name glance --description "OpenStack Image service" image')
 os.system('source /root/keystonerc && openstack endpoint create --region RegionOne image public http://'+ip_controller+':9292')
@@ -175,102 +202,140 @@ os.system('source /root/keystonerc && openstack endpoint create --region RegionO
 
 ########################## Add a User and Database on MariaDB for Glance ###############################################
 
-print('Create Glance database')
+print('\nCreate Glance database')
 time.sleep(2)
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database glance;\"")
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on glance.* to glance@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on glance.* to glance@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on glance.* to glance@'localhost' identified by"' \'' +pass_user_sql+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on glance.* to glance@'%' identified by"' \'' +pass_user_sql+'\''';\"')
 os.system("mysql -uroot -p"+rootsql+ " -e \"flush privileges;\"")
 
 ############################### Install Glance #########################################################################
-print("Install Glance")
+print("\nInstall Glance")
 time.sleep(2)
 
 os.system("yum --enablerepo=centos-openstack-queens,epel -y install openstack-glance")
 
 ############################# config Glance ############################################################################
 os.system('mv /etc/glance/glance-api.conf /etc/glance/glance-api.conf.org ')
-glance_api ='/root/openstack/controller/glance-api.conf'
-
-subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',glance_api])
-subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',glance_api])
 os.system('cp /root/openstack/controller/glance-api.conf /etc/glance/')
+glance_api ='/etc/glance/glance-api.conf'
+
+subprocess.call(['sed','--in-place',r's/pass_user_sql/'+pass_user_sql+'/g',glance_api])
+subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',glance_api])
+subprocess.call(['sed','--in-place',r's/pass_project_user/'+pass_project_user+'/g',glance_api])
+
 
 os.system('mv /etc/glance/glance-registry.conf /etc/glance/glance-registry.conf.org ')
-glance_registry='/root/openstack/controller/glance-registry.conf'
-
-subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',glance_registry])
-subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',glance_registry])
 os.system('cp /root/openstack/controller/glance-registry.conf /etc/glance/')
+glance_registry='/etc/glance/glance-registry.conf'
+
+subprocess.call(['sed','--in-place',r's/pass_user_sql/'+pass_user_sql+'/g',glance_registry])
+subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',glance_registry])
+subprocess.call(['sed','--in-place',r's/pass_project_user/'+pass_project_user+'/g',glance_registry])
 
 
-print('phan quyen file Glance ')
+
+print('\nPhan quyen file Glance ')
 time.sleep(2)
 os.system('chmod 640 /etc/glance/glance-api.conf /etc/glance/glance-registry.conf ')
 os.system('chown root:glance /etc/glance/glance-api.conf /etc/glance/glance-registry.conf')
 os.system('su -s /bin/bash glance -c "glance-manage db_sync"')
 
-print('restart servicer glance')
+print('\nRestart servicer glance')
 time.sleep(2)
 os.system('systemctl start openstack-glance-api openstack-glance-registry ')
 os.system('systemctl enable openstack-glance-api openstack-glance-registry ')
 
 ################################### Compute Service (Nova) #############################################################
 
-
-os.system("source /root/keystonerc && openstack user create --domain default --project service --password "+pass_user_service+" nova")
+print('\nAdd nova user project')
+time.sleep(2)
+os.system("source /root/keystonerc && openstack user create --domain default --project service --password "+pass_project_user+" nova")
 os.system("source /root/keystonerc && openstack role add --project service --user nova admin")
-os.system("source /root/keystonerc && openstack user create --domain default --project service --password "+pass_user_service+" placement")
+
+print('\nadd placement user project')
+time.sleep(2)
+os.system("source /root/keystonerc && openstack user create --domain default --project service --password "+pass_project_user+" placement")
 os.system("source /root/keystonerc && openstack role add --project service --user placement admin")
+
+print('\nadd service entry for nova')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack service create --name nova --description "OpenStack Compute service" compute')
+
+print('\nadd service entry for placement')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack service create --name placement --description "OpenStack Compute Placement service" placement')
+
+print('\nadd endpoint for nova (public)')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack endpoint create --region RegionOne compute public http://'+ip_controller+':8774/v2.1/%\(tenant_id\)s')
+
+print('\nadd endpoint for nova (internal)')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack endpoint create --region RegionOne compute internal http://'+ip_controller+':8774/v2.1/%\(tenant_id\)s')
+
+
+print('\nadd endpoint for nova (admin)')
+time.sleep(2)
+os.system('source /root/keystonerc && openstack endpoint create --region RegionOne compute admin http://'+ip_controller+':8774/v2.1/%\(tenant_id\)s')
+
+
+print('\nadd endpoint for placement (public)')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack endpoint create --region RegionOne placement public http://'+ip_controller+':8778')
+
+print('\nadd endpoint for placement (internal)')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack endpoint create --region RegionOne placement internal http://'+ip_controller+':8778')
+
+print('\nadd endpoint for placement (admin)')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack endpoint create --region RegionOne placement admin http://'+ip_controller+':8778')
 
 ########################## Add a User and Database on MariaDB for Nova ###############################################
 
-print('Create nova, nova_api, nova_placement, nova_cell0 database')
+print('\nCreate nova, nova_api, nova_placement, nova_cell0 database')
 time.sleep(2)
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database nova;\"")
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova.* to nova@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova.* to nova@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova.* to nova@'localhost' identified by"' \'' +pass_user_sql+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova.* to nova@'%' identified by"' \'' +pass_user_sql+'\''';\"')
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database nova_api;\"")
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_api.* to nova@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_api.* to nova@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_api.* to nova@'localhost' identified by"' \'' +pass_user_sql+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_api.* to nova@'%' identified by"' \'' +pass_user_sql+'\''';\"')
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database nova_placement;\"")
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_placement.* to nova@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_placement.* to nova@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_placement.* to nova@'localhost' identified by"' \'' +pass_user_sql+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_placement.* to nova@'%' identified by"' \'' +pass_user_sql+'\''';\"')
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database nova_cell0;\"")
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_cell0.* to nova@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_cell0.* to nova@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_cell0.* to nova@'localhost' identified by"' \'' +pass_user_sql+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on nova_cell0.* to nova@'%' identified by"' \'' +pass_user_sql+'\''';\"')
 os.system("mysql -uroot -p"+rootsql+ " -e \"flush privileges;\"")
 
 ##################################### Install Nova and config services #################################################
-print('Install Nova services')
-time.sleep(2)
+print('\nInstall Nova services')
+time.sleep(3)
 
 os.system('yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova')
 
-print('Config Nova')
+print('\nConfig Nova')
 time.sleep(2)
 
 ###################################### config nova node controller #####################################################
 os.system('mv /etc/nova/nova.conf /etc/nova/nova.conf.org')
+os.system('cp /root/openstack/controller/nova.conf /etc/nova/')
+con_nova_conf = '/etc/nova/nova.conf'
 
-con_nova_conf = '/root/openstack/controller/nova.conf'
-subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',con_nova_conf])
+subprocess.call(['sed','--in-place',r's/pass_rabbitmq/'+pass_rabbitmq+'/g',con_nova_conf])
+subprocess.call(['sed','--in-place',r's/pass_user_sql/'+pass_user_sql+'/g',con_nova_conf])
 subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',con_nova_conf])
-os.system('cp /root/openstack/controller/nova.conf /etc/glance/')
+subprocess.call(['sed','--in-place',r's/pass_project_user/'+pass_project_user+'/g',con_nova_conf])
 
-print('Phan quyen nova')
+
+print('\nPhan quyen nova')
 time.sleep(2)
 os.system('chmod 640 /etc/nova/nova.conf')
 os.system('chgrp nova /etc/nova/nova.conf')
@@ -290,23 +355,33 @@ os.system('''for service in api consoleauth conductor scheduler novncproxy; do
 systemctl start openstack-nova-$service
 systemctl enable openstack-nova-$service
 done''')
+
+print('\nshow status')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack compute service list')
 
 ############################## NODE compute ############################################################################
 
-print('Cai dat va cau hinh node compute'.upper())
+print('\nCai dat va cau hinh node compute'.upper())
 time.sleep(3)
 
-os.system('ssh root@'+ip_compute+' yum -y install centos-release-openstack-queens epel-release')
+os.system('ssh root@'+ip_compute+' yum -y install centos-release-openstack-queens epel-release && yum -y install qemu-kvm libvirt virt-install')
 os.system('ssh root@'+ip_compute+' sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo')
 os.system('ssh root@'+ip_compute+' yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova-compute')
+os.system('ssh root@'+ip_compute+' systemctl restart libvirtd; systemctl enable libvirtd')
 
 ############################## config nova node compute ################################################################
 os.system('ssh root@'+ip_compute+' mv /etc/nova/nova.conf /etc/nova/nova.conf.org')
+os.system('mv /root/openstack/compute/nova.conf /root/openstack/compute/nova.conf.org')
 com_nova_conf = '/root/openstack/compute/nova.conf'
-subprocess.call(['sed','--in-place',r's/ip_compute/'+ip_compute+'/g',com_nova_confnova_conf])
-subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',com_nova_confnova_conf])
-subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',com_nova_confnova_conf])
+
+subprocess.call(['sed','--in-place',r's/ip_compute/'+ip_compute+'/g',com_nova_conf])
+subprocess.call(['sed','--in-place',r's/pass_rabbitmq/'+pass_rabbitmq+'/g',com_nova_conf])
+subprocess.call(['sed','--in-place',r's/pass_project_user/'+pass_project_user+'/g',com_nova_conf])
+subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',com_nova_conf])
+
+print('\ntransfer file nova.conf to compute node'.upper())
+time.sleep(2)
 os.system('scp /root/openstack/compute/nova.conf root@'+ip_compute+':/etc/nova/')
 os.system('ssh root@'+ip_compute+' chmod 640 /etc/nova/nova.conf')
 os.system('ssh root@'+ip_compute+' chgrp nova /etc/nova/nova.conf')
@@ -315,20 +390,38 @@ os.system('ssh root@'+ip_compute+' chgrp nova /etc/nova/nova.conf')
 os.system('ssh root@'+ip_compute+' systemctl restart openstack-nova-compute; systemctl enable openstack-nova-compute')
 
 ############################## discover Compute Nodes ##################################################################
-print('discover Compute Node')
+print('\nDiscover Compute Node')
 time.sleep(2)
 os.system('source /root/keystonerc && su -s /bin/bash nova -c "nova-manage cell_v2 discover_hosts"')
+
+print('\nshow status')
+time.sleep(2)
 os.system('source /root/keystonerc && openstack compute service list')
 
 ################################## Network Service (Neutron) ###########################################################
 
-print('Add user or service for Neutron on Keystone Server'.title())
-time.sleep(3)
-os.system('source /root/keystonerc && openstack user create --domain default --project service --password '+pass_user_service+' neutron')
+print('\nAdd user or service for Neutron on Keystone Server'.title())
+time.sleep(2)
+
+print('\nadd neutron user (set in service project)'.title())
+time.sleep(2)
+os.system('source /root/keystonerc && openstack user create --domain default --project service --password '+pass_project_user+' neutron')
 os.system('source /root/keystonerc && openstack role add --project service --user neutron admin')
+
+print('\nadd service entry for neutron'.title())
+time.sleep(2)
 os.system('source /root/keystonerc && openstack service create --name neutron --description "OpenStack Networking service" network')
+
+print('\nadd endpoint for neutron (public)'.title())
+time.sleep(2)
 os.system('source /root/keystonerc && openstack endpoint create --region RegionOne network public http://'+ip_controller+':9696')
+
+print('\nadd endpoint for neutron (internal)'.title())
+time.sleep(2)
 os.system('source /root/keystonerc && openstack endpoint create --region RegionOne network internal http://'+ip_controller+':9696')
+
+print('\nadd endpoint for neutron (admin)'.title())
+time.sleep(2)
 os.system('source /root/keystonerc && openstack endpoint create --region RegionOne network admin http://'+ip_controller+':9696')
 
 ############################################## Add a User and Database on MariaDB for Neutron ##########################
@@ -336,8 +429,8 @@ print('Add a User and Database on MariaDB for Neutron'.title())
 time.sleep(2)
 
 os.system("mysql -uroot -p"+rootsql+ " -e \"create database neutron_ml2;\"")
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on neutron_ml2.* to neutron@'localhost' identified by"' \'' +pass_user_service+'\''';\"')
-os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on neutron_ml2.* to neutron@'%' identified by"' \'' +pass_user_service+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on neutron_ml2.* to neutron@'localhost' identified by"' \'' +pass_user_sql+'\''';\"')
+os.system("mysql -uroot -p"+rootsql+ " -e \"grant all privileges on neutron_ml2.* to neutron@'%' identified by"' \'' +pass_user_sql+'\''';\"')
 os.system("mysql -uroot -p"+rootsql+ " -e \"flush privileges;\"")
 
 ########################################## Install neutron service #####################################################
@@ -351,11 +444,14 @@ print('Config neutron'.title())
 time.sleep(2)
 
 os.system('mv /etc/neutron/neutron.conf /etc/neutron/neutron.conf.org')
-
-neutron = '/root/openstack/controller/neutron.conf'
-subprocess.call(['sed','--in-place',r's/pass_user_service/'+pass_user_service+'/g',neutron])
-subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',neutron])
 os.system('cp /root/openstack/controller/neutron.conf /etc/neutron/')
+neutron = '/etc/neutron/neutron.conf'
+
+subprocess.call(['sed','--in-place',r's/pass_rabbitmq/'+pass_rabbitmq+'/g',neutron])
+subprocess.call(['sed','--in-place',r's/pass_user_sql/'+pass_user_sql+'/g',neutron])
+subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',neutron])
+subprocess.call(['sed','--in-place',r's/pass_project_user/'+pass_project_user+'/g',neutron])
+
 
 ###################################### phan quyen ######################################################################
 os.system('chmod 640 /etc/neutron/neutron.conf')
@@ -388,16 +484,19 @@ subprocess.call(["sed","--in-place",r"s/\#enable_ipset = true/enable_ipset = tru
 ect_nova_conf='/etc/nova/nova.conf'
 subprocess.call(["sed","--in-place",r"s/\[DEFAULT]/\[DEFAULT]\nuse_neutron = True\nlinuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver\nfirewall_driver = nova.virt.firewall.NoopFirewallDriver\nvif_plugging_is_fatal = True\nvif_plugging_timeout = 300\n/g",ect_nova_conf])
 
+
 with open('/etc/nova/nova.conf', 'a+') as nova:
     nova.write('''\n[neutron]\nauth_url = http://'''+ip_controller+''':5000
-                \nauth_type = password\nproject_domain_name = default
+                \nauth_type = password
+                \nproject_domain_name = default
                 \nuser_domain_name = default
                 \nregion_name = RegionOne
                 \nproject_name = service
                 \nusername = neutron
-                \npassword = '''+pass_user_service+'''
+                \npassword = '''+pass_project_user+'''
                 \nservice_metadata_proxy = True
                 \nmetadata_proxy_shared_secret = metadata_secret''')
+    nova.close()
 
 ################################ 	Start Neutron services #############################################################
 print('Start Neutron services')
@@ -420,10 +519,15 @@ print('Install Horizon.'.upper())
 time.sleep(3)
 os.system('yum --enablerepo=centos-openstack-queens,epel -y install openstack-dashboard')
 
-dashboard='/root/openstack/controller/local_settings'
-subprocess.call(["sed","--in-place",r"s/\#ALLOWED_HOSTS = ['horizon.example.com', 'localhost']/ALLOWED_HOSTS = ['"+ip_controller+"', 'localhost']/g",dashboard])
-subprocess.call(["sed","--in-place",r"s/\   	    'LOCATION': '192.168.100.10:11211',/\   	    'LOCATION': '"+ip_controller+":11211']/g",dashboard])
-subprocess.call(["sed","--in-place",r"s/OPENSTACK_HOST = \"192.168.100.10\"/OPENSTACK_HOST = \""+ip_controller+"\"/g",dashboard])
+os.system('mv /etc/openstack-dashboard/local_settings /etc/openstack-dashboard/local_settings.org')
+os.system('cp /root/openstack/controller/local_settings /etc/openstack-dashboard/')
+
+dashboard='/etc/openstack-dashboard/local_settings'
+subprocess.call(["sed","--in-place",r"s/ALLOWED_HOSTS = \['horizon.example.com', 'localhost']/ALLOWED_HOSTS = ['"+ip_controller+"', 'localhost']/",dashboard])
+subprocess.call(["sed","--in-place",r"s/\   	    'LOCATION': '192.168.100.10:11211',/\   	    'LOCATION': '"+ip_controller+":11211',/g",dashboard])
+subprocess.call(["sed","--in-place",r"s/OPENSTACK_HOST = \"127.0.0.1\"/OPENSTACK_HOST = \""+ip_controller+"\"/g",dashboard])
+
+
 
 dashboard_conf='/etc/httpd/conf.d/openstack-dashboard.conf'
 subprocess.call(["sed","--in-place",r"s/WSGISocketPrefix run\/wsgi/WSGISocketPrefix run\/wsgi\nWSGIApplicationGroup %{GLOBAL}/g",dashboard_conf])

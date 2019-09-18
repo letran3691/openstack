@@ -64,7 +64,7 @@ ALLOWED_HOSTS = ['horizon.example.com', 'localhost']
 OPENSTACK_API_VERSIONS = {
 #    "data-processing": 1.1,
     "identity": 3,
-#    "image": 2,
+    "image": 2,
     "volume": 2,
     "compute": 2,
 }
@@ -150,7 +150,7 @@ LOCAL_PATH = '/tmp'
 # (usually behind a load-balancer). Either you have to make sure that a session
 # gets all requests routed to the same dashboard instance or you set the same
 # SECRET_KEY for all of them.
-SECRET_KEY='c57baeba66c8ae10363a'
+SECRET_KEY='4f6f27957921ee720bd1'
 
 # We recommend you use memcached for development; otherwise after every reload
 # of the django development server, you will have to login again. To use
@@ -186,10 +186,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 #    ('http://cluster2.example.com:5000/v3', 'cluster2'),
 #]
 
-OPENSTACK_HOST = "192.168.100.10"
+OPENSTACK_HOST = "127.0.0.1"
 OPENSTACK_KEYSTONE_URL = "http://%s:5000/v3" % OPENSTACK_HOST
 OPENSTACK_KEYSTONE_DEFAULT_ROLE = "admin"
-
 
 # For setting the default service region on a per-endpoint basis. Note that the
 # default value for this setting is {}, and below is just an example of how it
