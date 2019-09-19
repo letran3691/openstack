@@ -35,10 +35,10 @@ float_dns = '8.8.8.8'
 hn_controller = input('\nNhap hostname controller node: ')
 hn_compute = input('Nhap hostname compute node: ')
 hn_storage = input('Nhap hostname storage node: ')
-
+user = 'admin'
+pass_admin = input('\nNhap password admin: ')
 rabbitmq_user = 'openstack'
-pass_rabbitmq = input('\nNhap password RabbitMQ: ')
-pass_admin = input('Nhap password admin: ')
+pass_rabbitmq = input('Nhap password RabbitMQ: ')
 rootsql = input('Nhap password root sql: ')
 pass_user_sql = input('Nhap password user sql: ')
 pass_project_user = input('Nhap password project user: ')
@@ -54,8 +54,7 @@ with open('info','w+') as info:
                 \nhostname compute: '''+hn_compute+'''
                 \nhostname storage: '''+hn_storage+'''
                 \nrabbitmq_user: openstack
-               \nPassword RabbitMQ: ''' +pass_rabbitmq+'''
-               \nPassword admin: '''+pass_admin+'''
+                \nPassword RabbitMQ: ''' +pass_rabbitmq+'''
                 \npassword root sql :'''+rootsql+'''
                 \nPassword user services: '''+pass_user_sql+'''
                 \npassword project user: '''+pass_project_user+'''
@@ -66,7 +65,11 @@ with open('info','w+') as info:
                 \nIP cap phat tu: '''+float_start+'''
                 \nDen IP: '''+float_end+'''
                 \nGateway float IP: '''+float_gw+'''
-                \nDNS floating : ''' +float_dns)
+                \nDNS floating : ''' +float_dns+'''
+                \nhttp://'''+ip_controller+'''/dashboard'''+'''
+                \nDomain: default
+                \nUser: admin
+                \nPassword admin: '''+pass_admin)
 
     info.close()
 
@@ -421,6 +424,7 @@ done''')
 print('\nshow status')
 time.sleep(2)
 os.system('source /root/keystonerc && openstack compute service list')
+os.system('source /root/keystonerc && nova-manage cell_v2 discover_hosts --verbose')
 
 ############################## NODE compute ############################################################################
 
@@ -448,7 +452,7 @@ os.system('ssh root@'+ip_compute+' chmod 640 /etc/nova/nova.conf')
 os.system('ssh root@'+ip_compute+' chgrp nova /etc/nova/nova.conf')
 
 ############################## Start Nova Compute Service on node compute ##############################################
-os.system('ssh root@'+ip_compute+' systemctl restart openstack-nova-compute; systemctl enable openstack-nova-compute')
+os.system('ssh root@'+ip_compute+' systemctl restart openstack-nova-compute && systemctl enable openstack-nova-compute')
 
 ############################## discover Compute Nodes ##################################################################
 print('\nDiscover Compute Node')
@@ -529,7 +533,7 @@ subprocess.call(["sed","--in-place",r"s/\#enable_isolated_metadata = false/enabl
 metadata_ini='/etc/neutron/metadata_agent.ini'
 subprocess.call(["sed","--in-place",r"s/\#nova_metadata_host = 127.0.0.1/nova_metadata_host = " +ip_controller+"/g",metadata_ini])
 subprocess.call(["sed","--in-place",r"s/\#metadata_proxy_shared_secret =/metadata_proxy_shared_secret = metadata_secret/g",metadata_ini])
-subprocess.call(["sed","--in-place",r"s/\#memcache_servers = localhost:11211/memcache_servers =" +ip_controller+":11211/g",metadata_ini])
+subprocess.call(["sed","--in-place",r"s/\#memcache_servers = localhost:11211/memcache_servers = " +ip_controller+":11211/g",metadata_ini])
 
 ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
 subprocess.call(["sed","--in-place",r"s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g",ml2_ini])
@@ -571,9 +575,14 @@ os.system('''for service in server dhcp-agent l3-agent metadata-agent openvswitc
             systemctl start neutron-$service 
             systemctl enable neutron-$service 
             done''')
-os.system('systemctl restart openstack-nova-api openstack-nova-compute')
+os.system('systemctl restart openstack-nova-api')
 
 os.system('source /root/keystonerc && openstack network agent list')
+
+##################################### add flavor #######################################################################
+print('\nadd flavor')
+time.sleep(2)
+os.system('source /root/keystonerc && openstack flavor create --id 0 --vcpus 1 --ram 2048 --disk 10 m1.small')
 
 ##################################### Configure Horizon ################################################################
 print('\nInstall Horizon.'.upper())
@@ -602,6 +611,8 @@ os.system("ssh root@"+ip_compute+ " yum --enablerepo=centos-openstack-queens,epe
 os.system("ssh root@"+ip_compute+ " mv /etc/neutron/neutron.conf /etc/neutron/neutron.conf.org ")
 os.system("cp /root/openstack/compute/neutron.conf /root/openstack/compute/neutron.conf.org")
 
+print('transfer file to compute.'.title())
+time.sleep(2)
 com_neutron='/root/openstack/compute/neutron.conf'
 subprocess.call(['sed','--in-place',r's/pass_rabbitmq/'+pass_rabbitmq+'/g',com_neutron])
 subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',com_neutron])
@@ -705,11 +716,13 @@ subprocess.call(["sed","--in-place",r"s/\#l2_population = false/l2_population = 
 
 subprocess.call(["sed","--in-place",r"s/\#extensions =/\#extensions =\nprevent_arp_spoofing = True/g",openvswitch_ini])
 
-subprocess.call(["sed","--in-place",r"s/\#local_ip = <None>/\local_ip = "+ip_controller+"/g",openvswitch_ini])
+subprocess.call(["sed","--in-place",r"s/\#local_ip = <None>/local_ip = "+ip_controller+"/g",openvswitch_ini])
 
 os.system('systemctl restart neutron-server ')
 
-os.system('for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do systemctl restart neutron-$service done')
+os.system('''for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; 
+do systemctl restart neutron-$service 
+done''')
 
 print('\nNeutron Network (VXLAN) controller done\n')
 time.sleep(2)
@@ -728,7 +741,7 @@ subprocess.call(["sed","--in-place",r"s/\#extensions =/\#extensions =\nprevent_a
 
 subprocess.call(["sed","--in-place",r"s/\#local_ip = <None>/local_ip = "+ip_compute+"/g",com_openvswitch_ini])
 
-os.system('ssh root@'+ip_compute+' systemctl restart neutron-openvswitch-agent')
+os.system('ssh root@'+ip_compute+' "systemctl restart neutron-openvswitch-agent"')
 
 
 print('\nNeutron Network (VXLAN) compute done')
@@ -763,14 +776,6 @@ print('\n add router to external')
 time.sleep(2)
 os.system('source /root/keystonerc && openstack router set router1 --external-gateway external')
 
-time.sleep(2)
-os.system("source /root/keystonerc && rbacID=$(openstack network rbac list | grep network | awk '{print $2}')")
-
-
-print('\n show network rbac  ')
-time.sleep(2)
-os.system('source /root/keystonerc && openstack network rbac show $rbacID')
-
 print('\n list network')
 time.sleep(2)
 os.system('source /root/keystonerc && openstack network list')
@@ -781,10 +786,7 @@ os.system('source /root/keystonerc && openstack project list')
 
 print('\n network rbac create')
 time.sleep(2)
-os.system("source /root/keystonerc && netID=$(openstack network list | grep internal | awk '{ print $2 }')")
-os.system("source /root/keystonerc && prjID=$(openstack project list | grep admin | awk '{ print $2 }')")
-os.system("source /root/keystonerc && openstack network rbac create --target-project $prjID --type network --action access_as_shared $netID")
-
+os.system("source /root/keystonerc && openstack network rbac create --target-project admin --type network --action access_as_shared internal")
 print('\n list flavor')
 time.sleep(2)
 os.system("source /root/keystonerc && openstack flavor list")
@@ -801,9 +803,13 @@ print('\n Create private key')
 time.sleep(2)
 os.system("source /root/keystonerc && openstack keypair create --public-key /root/.ssh/id_rsa.pub mykey")
 
+print('\nCai dat va cau hinh xong'.upper())
+print("\nLink truy cap: http://"+ip_controller+"/dashboard\ndomain: default\nUser : admin\npassword: "+pass_admin)
 
 
+###################### debug ###########################################################################################
 
+#host control is not mapped to any cell  >>> nova-manage cell_v2 discover_hosts --verbose
 
 
 
