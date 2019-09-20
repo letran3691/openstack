@@ -32,9 +32,9 @@ float_end = input('Den IP: ')
 float_gw = input('Nhap gateway ra net cua local hoac public(neu co): ')
 float_dns = '8.8.8.8'
 
-hn_controller = input('\nNhap hostname controller node: ')
-hn_compute = input('Nhap hostname compute node: ')
-hn_storage = input('Nhap hostname storage node: ')
+# hn_controller = input('\nNhap hostname controller node: ')
+# hn_compute = input('Nhap hostname compute node: ')
+# hn_storage = input('Nhap hostname storage node: ')
 user = 'admin'
 pass_admin = input('\nNhap password admin: ')
 rabbitmq_user = 'openstack'
@@ -592,6 +592,18 @@ os.system('systemctl restart openstack-nova-api')
 
 os.system('source /root/keystonerc && openstack network agent list')
 
+os.system('ovs-vsctl add-br br-'+inf1)
+os.system('ovs-vsctl add-port br-'+inf1+' '+inf1)
+
+ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
+subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",ml2_ini])
+
+subprocess.call(["sed","--in-place",r"s/\#bridge_mappings =/bridge_mappings = physnet1:"+inf1+"/g",openvswitch_ini])
+
+os.system('systemctl restart neutron-openvswitch-agent ')
+
+
+
 ##################################### add flavor #######################################################################
 print('\nadd flavor')
 time.sleep(2)
@@ -731,16 +743,7 @@ os.system('ssh root@'+ip_compute+' systemctl enable neutron-openvswitch-agent ')
 
 print('\nNeutron Network (VXLAN) controller\n')
 
-
-os.system('ovs-vsctl add-br br-'+inf1[1])
-os.system('ovs-vsctl add-port br-'+inf1[1]+' '+inf1[1])
-
-
-ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
-subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",ml2_ini])
 subprocess.call(["sed","--in-place",r"s/\#vni_ranges =/vni_ranges = 1:1000/g",ml2_ini])
-
-os.system('systemctl restart neutron-openvswitch-agent ')
 
 openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
 print('1')
@@ -755,7 +758,6 @@ subprocess.call(["sed","--in-place",r"s/\#extensions =/\#extensions =\nprevent_a
 print('4')
 subprocess.call(["sed","--in-place",r"s/\#local_ip = <None>/local_ip = "+ip_controller+"/g",openvswitch_ini])
 
-subprocess.call(["sed","--in-place",r"s/\#bridge_mappings =/bridge_mappings = physnet1:"+inf1+"/g",openvswitch_ini])
 
 
 print('6')
