@@ -613,6 +613,9 @@ subprocess.call(["sed","--in-place",r"s/OPENSTACK_HOST = \"127.0.0.1\"/OPENSTACK
 
 dashboard_conf='/etc/httpd/conf.d/openstack-dashboard.conf'
 subprocess.call(["sed","--in-place",r"s/WSGISocketPrefix run\/wsgi/WSGISocketPrefix run\/wsgi\nWSGIApplicationGroup %{GLOBAL}/g",dashboard_conf])
+
+print('\nRestart httpd')
+time.sleep(2)
 os.system('systemctl restart httpd')
 
 
@@ -727,6 +730,11 @@ os.system('ssh root@'+ip_compute+' systemctl enable neutron-openvswitch-agent ')
 ##############################  Neutron Network (VXLAN) controller #####################################################
 
 print('\nNeutron Network (VXLAN) controller\n')
+
+
+os.system('ovs-vsctl add-br br-'+inf1[1])
+os.system('ovs-vsctl add-port br-'+inf1[1]+' '+inf1[1])
+
 
 ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
 subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",ml2_ini])
