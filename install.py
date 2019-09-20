@@ -656,6 +656,7 @@ print('Neutron Network (FLAT)')
 time.sleep(3)
 
 ##############################  Neutron Network (FLAT) controller ######################################################
+
 os.system('ovs-vsctl add-br br-'+inf1)
 os.system('ovs-vsctl add-port br-'+inf1+' '+inf1)
 
@@ -669,6 +670,8 @@ os.system('systemctl restart neutron-openvswitch-agent ')
 print('\nNeutron Network (FLAT) controller \n')
 time.sleep(2)
 ##############################  Neutron Network (FLAT) compute #########################################################
+print('Neutron Network (FLAT) compute\n')
+time.sleep(2)
 
 with open('/root/openstack/compute/infacer') as f1:
     inf_com = f1.read()
@@ -677,16 +680,21 @@ with open('/root/openstack/compute/infacer') as f1:
 os.system('ssh root@'+ip_compute+' ovs-vsctl add-br br-'+inf_com[1])
 os.system('ssh root@'+ip_compute+' ovs-vsctl add-port br-'+inf_com[1]+' '+inf_com[1])
 
+print('1')
 com_ml2_ini='/root/openstack/compute/ml2_conf.ini'
 subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",com_ml2_ini])
 
+print('2')
 com_openvswitch_ini='/root/openstack/compute/openvswitch_agent.ini'
 subprocess.call(["sed","--in-place",r"s/\#bridge_mappings =/bridge_mappings = physnet1:"+inf1+"/g",com_openvswitch_ini])
 
+print('3')
 os.system('scp  /root/openstack/compute/ml2_conf.ini root@'+ip_compute+':/etc/neutron/plugins/ml2/')
 
+print('4')
 os.system('scp  /root/openstack/compute/openvswitch_agent.ini root@'+ip_compute+':/etc/neutron/plugins/ml2/')
 
+print('5')
 os.system('ssh root@'+ip_compute+' systemctl restart neutron-openvswitch-agent ')
 
 print('\nNeutron Network (FLAT) compute\n')
@@ -697,39 +705,54 @@ print('\nNeutron Network (VXLAN) controller\n')
 
 subprocess.call(["sed","--in-place",r"s/\#vni_ranges =/vni_ranges = 1:1000/g",ml2_ini])
 
+print('1')
 subprocess.call(["sed","--in-place",r"s/\#tunnel_types =/tunnel_types = vxlan/g",openvswitch_ini])
 
+print('2')
 subprocess.call(["sed","--in-place",r"s/\#tunnel_types =/tunnel_types = vxlan/g",openvswitch_ini])
 
+print('3')
 subprocess.call(["sed","--in-place",r"s/\#l2_population = false/l2_population = True/g",openvswitch_ini])
 
+print(4)
 subprocess.call(["sed","--in-place",r"s/\#extensions =/\#extensions =\nprevent_arp_spoofing = True/g",openvswitch_ini])
 
+print('5')
 subprocess.call(["sed","--in-place",r"s/\#local_ip = <None>/\local_ip = "+ip_controller+"/g",openvswitch_ini])
 
+print('6')
 os.system('systemctl restart neutron-server ')
 
-os.system('for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do systemctl restart neutron-$service done')
+print('7')
+os.system('''for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do 
+systemctl restart neutron-$service 
+done''')
 
 print('\nNeutron Network (VXLAN) controller done\n')
 time.sleep(2)
 ##############################  Neutron Network (VXLAN) compute ######################################################
 
+print('\nNeutron Network (VXLAN) compute')
+time.sleep(2)
 
+print('1')
 subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",com_ml2_ini])
 
+print('2')
 subprocess.call(["sed","--in-place",r"s/\#vni_ranges =/vni_ranges = 1:1000/g",com_ml2_ini])
-
+print('3')
 subprocess.call(["sed","--in-place",r"s/\#tunnel_types =/tunnel_types = vxlan/g",com_openvswitch_ini])
-
+print('4')
 subprocess.call(["sed","--in-place",r"s/\#l2_population = false/l2_population = True/g",com_openvswitch_ini])
-
+print('5')
 subprocess.call(["sed","--in-place",r"s/\#extensions =/\#extensions =\nprevent_arp_spoofing = True/g",com_openvswitch_ini])
-
+print('6')
 subprocess.call(["sed","--in-place",r"s/\#local_ip = <None>/local_ip = "+ip_compute+"/g",com_openvswitch_ini])
+print('7')
+os.system('ssh root@'+ip_compute+' "systemctl restart neutron-openvswitch-agent"')
 
-os.system('ssh root@'+ip_compute+' systemctl restart neutron-openvswitch-agent')
 
+####################### sh: -c: line 1: syntax error: unexpected end of file
 
 print('\nNeutron Network (VXLAN) compute done')
 time.sleep(2)
@@ -767,7 +790,7 @@ time.sleep(2)
 os.system("source /root/keystonerc && rbacID=$(openstack network rbac list | grep network | awk '{print $2}')")
 
 
-print('\n show network rbac  ')
+print('\n show network rbac  ') #########################################################
 time.sleep(2)
 os.system('source /root/keystonerc && openstack network rbac show $rbacID')
 
