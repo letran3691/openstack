@@ -188,7 +188,8 @@ time.sleep(2)
 os.system('yum --enablerepo=centos-openstack-queens,epel -y install openstack-keystone openstack-utils python-openstackclient httpd mod_wsgi')
 
 token_conf='/etc/keystone/keystone.conf'
-subprocess.call(["sed","--in-place",r"s/\#memcache_servers = localhost:11211/\nmemcache_servers = "+ip_controller+":11211/g",token_conf])
+subprocess.call(["sed","--in-place",r"s/\#admin_token = <None>/admin_token = ADMIN/g",token_conf])
+subprocess.call(["sed","--in-place",r"s/\#memcache_servers = localhost:11211/memcache_servers = "+ip_controller+":11211/g",token_conf])
 subprocess.call(["sed","--in-place",r"s/\#connection = <None>/\nconnection = mysql+pymysql:\/\/keystone:"+pass_user_sql+"@"+ip_controller+"\/keystone/g",token_conf])
 subprocess.call(['sed','--in-place',r's/\#bind =/\nprovider = fernet\n\n#bind =/',token_conf])
 
@@ -282,6 +283,8 @@ time.sleep(2)
 os.system("yum --enablerepo=centos-openstack-queens,epel -y install openstack-glance")
 
 ############################# config Glance ############################################################################
+print('\nGlance api')
+time.sleep(2)
 os.system('mv /etc/glance/glance-api.conf /etc/glance/glance-api.conf.org ')
 os.system('cp /root/openstack/controller/glance-api.conf /etc/glance/')
 glance_api ='/etc/glance/glance-api.conf'
@@ -290,7 +293,8 @@ subprocess.call(['sed','--in-place',r's/pass_user_sql/'+pass_user_sql+'/g',glanc
 subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',glance_api])
 subprocess.call(['sed','--in-place',r's/pass_project_user/'+pass_project_user+'/g',glance_api])
 
-
+print('\nGlance registry')
+time.sleep(2)
 os.system('mv /etc/glance/glance-registry.conf /etc/glance/glance-registry.conf.org ')
 os.system('cp /root/openstack/controller/glance-registry.conf /etc/glance/')
 glance_registry='/etc/glance/glance-registry.conf'
@@ -298,7 +302,6 @@ glance_registry='/etc/glance/glance-registry.conf'
 subprocess.call(['sed','--in-place',r's/pass_user_sql/'+pass_user_sql+'/g',glance_registry])
 subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',glance_registry])
 subprocess.call(['sed','--in-place',r's/pass_project_user/'+pass_project_user+'/g',glance_registry])
-
 
 
 print('\nPhan quyen file Glance ')
@@ -312,7 +315,7 @@ time.sleep(2)
 os.system('systemctl start openstack-glance-api openstack-glance-registry ')
 os.system('systemctl enable openstack-glance-api openstack-glance-registry ')
 
-################################### Compute Service (Nova) #############################################################
+################################### Config (Nova) controller #############################################################
 
 print('\nAdd nova user project')
 time.sleep(2)
@@ -390,6 +393,8 @@ print('\nConfig Nova')
 time.sleep(2)
 
 ###################################### config nova node controller #####################################################
+print('\nConfig nova')
+time.sleep(2)
 os.system('mv /etc/nova/nova.conf /etc/nova/nova.conf.org')
 os.system('cp /root/openstack/controller/nova.conf /etc/nova/')
 con_nova_conf = '/etc/nova/nova.conf'
@@ -404,6 +409,7 @@ print('\nPhan quyen nova')
 time.sleep(2)
 os.system('chmod 640 /etc/nova/nova.conf')
 os.system('chgrp nova /etc/nova/nova.conf')
+
 
 os.system('cp -f /root/openstack/controller/00-nova-placement-api.conf /etc/httpd/conf.d/')
 
@@ -431,10 +437,12 @@ os.system('source /root/keystonerc && nova-manage cell_v2 discover_hosts --verbo
 print('\nCai dat va cau hinh node compute'.upper())
 time.sleep(3)
 
-os.system('ssh root@'+ip_compute+' yum -y install centos-release-openstack-queens epel-release && yum -y install qemu-kvm libvirt virt-install')
+print('\nInstall libvirt and nova-compute')
+time.sleep(2)
+os.system('ssh root@'+ip_compute+' yum -y install centos-release-openstack-queens epel-release && yum -y install qemu-kvm libvirt virt-install bridge-utils')
 os.system('ssh root@'+ip_compute+' sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo')
 os.system('ssh root@'+ip_compute+' yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova-compute')
-os.system('ssh root@'+ip_compute+' systemctl restart libvirtd; systemctl enable libvirtd')
+os.system('ssh root@'+ip_compute+' systemctl restart libvirtd && systemctl enable libvirtd')
 
 ############################## config nova node compute ################################################################
 os.system('ssh root@'+ip_compute+' mv /etc/nova/nova.conf /etc/nova/nova.conf.org')
@@ -452,7 +460,10 @@ os.system('ssh root@'+ip_compute+' chmod 640 /etc/nova/nova.conf')
 os.system('ssh root@'+ip_compute+' chgrp nova /etc/nova/nova.conf')
 
 ############################## Start Nova Compute Service on node compute ##############################################
-os.system('ssh root@'+ip_compute+' systemctl restart openstack-nova-compute && systemctl enable openstack-nova-compute')
+print('\nStart and enable nova-compute')
+time.sleep(2)
+os.system('ssh root@'+ip_compute+' systemctl restart openstack-nova-compute')
+os.system('ssh root@'+ip_compute+' systemctl enable openstack-nova-compute')
 
 ############################## discover Compute Nodes ##################################################################
 print('\nDiscover Compute Node')
@@ -517,10 +528,10 @@ subprocess.call(['sed','--in-place',r's/pass_user_sql/'+pass_user_sql+'/g',neutr
 subprocess.call(['sed','--in-place',r's/ip_controller/'+ip_controller+'/g',neutron])
 subprocess.call(['sed','--in-place',r's/pass_project_user/'+pass_project_user+'/g',neutron])
 
-
-###################################### phan quyen ######################################################################
 os.system('chmod 640 /etc/neutron/neutron.conf')
 os.system('chgrp neutron /etc/neutron/neutron.conf')
+
+###################################### phan quyen ######################################################################
 
 l3_ini='/etc/neutron/l3_agent.ini'
 subprocess.call(["sed","--in-place",r"s/\#interface_driver = <None>/interface_driver = openvswitch/g",l3_ini])
@@ -547,20 +558,22 @@ subprocess.call(["sed","--in-place",r"s/\#enable_security_group = true/enable_se
 subprocess.call(["sed","--in-place",r"s/\#enable_ipset = true/enable_ipset = true/g",openvswitch_ini])
 
 
-subprocess.call(["sed","--in-place",r"s/\[DEFAULT]/\[DEFAULT]\nuse_neutron = True\nlinuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver\nfirewall_driver = nova.virt.firewall.NoopFirewallDriver\nvif_plugging_is_fatal = True\nvif_plugging_timeout = 300\n/g",con_nova_conf])
+con_nova_conf = '/etc/nova/nova.conf'
+subprocess.call(["sed","--in-place",r"s/\#neutron/\nuse_neutron = True\nlinuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver\nfirewall_driver = nova.virt.firewall.NoopFirewallDriver\nvif_plugging_is_fatal = True\nvif_plugging_timeout = 300\n/g",con_nova_conf])
 
 
 with open('/etc/nova/nova.conf', 'a+') as nova:
-    nova.write('''\n[neutron]\nauth_url = http://'''+ip_controller+''':5000
-                \nauth_type = password
-                \nproject_domain_name = default
-                \nuser_domain_name = default
-                \nregion_name = RegionOne
-                \nproject_name = service
-                \nusername = neutron
-                \npassword = '''+pass_project_user+'''
-                \nservice_metadata_proxy = True
-                \nmetadata_proxy_shared_secret = metadata_secret''')
+    nova.write('''\n[neutron]
+auth_url = http://'''+ip_controller+''':5000
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+region_name = RegionOne
+project_name = service
+username = neutron
+password = '''+pass_project_user+'''
+service_metadata_proxy = True
+metadata_proxy_shared_secret = metadata_secret''')
     nova.close()
 
 ################################ 	Start Neutron services #############################################################
@@ -569,7 +582,7 @@ time.sleep(2)
 os.system('systemctl start openvswitch && systemctl enable openvswitch')
 os.system('ovs-vsctl add-br br-int')
 os.system('ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini')
-os.system('source /root/keystonerc && su -s /bin/bash neutron -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"')
+os.system('su -s /bin/bash neutron -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"')
 
 os.system('''for service in server dhcp-agent l3-agent metadata-agent openvswitch-agent; do 
             systemctl start neutron-$service 
@@ -638,16 +651,17 @@ subprocess.call(["sed","--in-place",r"s/\[DEFAULT]/\[DEFAULT]\nuse_neutron = Tru
 
 
 with open('/root/openstack/compute/nova.conf', 'a+') as nova:
-    nova.write('''\n[neutron]\nauth_url = http://'''+ip_controller+''':5000
-                \nauth_type = password
-                \nproject_domain_name = default
-                \nuser_domain_name = default
-                \nregion_name = RegionOne
-                \nproject_name = service
-                \nusername = neutron
-                \npassword = '''+pass_project_user+'''
-                \nservice_metadata_proxy = True
-                \nmetadata_proxy_shared_secret = metadata_secret''')
+    nova.write('''\n[neutron]
+auth_url = http://'''+ip_controller+''':5000
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+region_name = RegionOne
+project_name = service
+username = neutron
+password = '''+pass_project_user+'''
+service_metadata_proxy = True
+metadata_proxy_shared_secret = metadata_secret''')
     nova.close()
 
 os.system('scp  /root/openstack/compute/nova.conf root@'+ip_compute+':/etc/nova/')
@@ -661,96 +675,93 @@ os.system('ssh root@'+ip_compute+' systemctl start neutron-openvswitch-agent')
 os.system('ssh root@'+ip_compute+' systemctl enable neutron-openvswitch-agent ')
 
 
-########################### Neutron Network (FLAT) #####################################################################
-
-print('Neutron Network (FLAT)')
-time.sleep(3)
-
-##############################  Neutron Network (FLAT) controller ######################################################
-
-os.system('ovs-vsctl add-br br-'+inf1)
-os.system('ovs-vsctl add-port br-'+inf1+' '+inf1)
-
-subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",ml2_ini])
-
-subprocess.call(["sed","--in-place",r"s/\#bridge_mappings =/bridge_mappings = physnet1:"+inf1+"/g",openvswitch_ini])
-
-os.system('systemctl restart neutron-openvswitch-agent ')
-
-
-print('\nNeutron Network (FLAT) controller \n')
-time.sleep(2)
-##############################  Neutron Network (FLAT) compute #########################################################
-print('Neutron Network (FLAT) compute\n')
-time.sleep(2)
-
-with open('/root/openstack/compute/infacer') as f1:
-    inf_com = f1.read()
-    inf_com=inf_com.split('\n')
-
-os.system('ssh root@'+ip_compute+' ovs-vsctl add-br br-'+inf_com[1])
-os.system('ssh root@'+ip_compute+' ovs-vsctl add-port br-'+inf_com[1]+' '+inf_com[1])
-
-print('1')
-com_ml2_ini='/root/openstack/compute/ml2_conf.ini'
-subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",com_ml2_ini])
-
-print('2')
-com_openvswitch_ini='/root/openstack/compute/openvswitch_agent.ini'
-subprocess.call(["sed","--in-place",r"s/\#bridge_mappings =/bridge_mappings = physnet1:"+inf1+"/g",com_openvswitch_ini])
-
-print('3')
-os.system('scp  /root/openstack/compute/ml2_conf.ini root@'+ip_compute+':/etc/neutron/plugins/ml2/')
-
-print('4')
-os.system('scp  /root/openstack/compute/openvswitch_agent.ini root@'+ip_compute+':/etc/neutron/plugins/ml2/')
-
-print('5')
-os.system('ssh root@'+ip_compute+' systemctl restart neutron-openvswitch-agent ')
-
-print('\nNeutron Network (FLAT) compute\n')
-time.sleep(2)
+# ########################### Neutron Network (FLAT) #####################################################################
+#
+# print('Neutron Network (FLAT)')
+# time.sleep(3)
+#
+# ##############################  Neutron Network (FLAT) controller ######################################################
+#
+# os.system('ovs-vsctl add-br br-'+inf1)
+# os.system('ovs-vsctl add-port br-'+inf1+' '+inf1)
+#
+# subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",ml2_ini])
+#
+# subprocess.call(["sed","--in-place",r"s/\#bridge_mappings =/bridge_mappings = physnet1:"+inf1+"/g",openvswitch_ini])
+#
+# os.system('systemctl restart neutron-openvswitch-agent ')
+#
+#
+# print('\nNeutron Network (FLAT) controller \n')
+# time.sleep(2)
+# ##############################  Neutron Network (FLAT) compute #########################################################
+# print('Neutron Network (FLAT) compute\n')
+# time.sleep(2)
+#
+# with open('/root/openstack/compute/infacer') as f1:
+#     inf_com = f1.read()
+#     inf_com=inf_com.split('\n')
+#
+# os.system('ssh root@'+ip_compute+' ovs-vsctl add-br br-'+inf_com[1])
+# os.system('ssh root@'+ip_compute+' ovs-vsctl add-port br-'+inf_com[1]+' '+inf_com[1])
+#
+# print('1')
+# com_ml2_ini='/root/openstack/compute/ml2_conf.ini'
+# subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",com_ml2_ini])
+#
+# print('2')
+# com_openvswitch_ini='/root/openstack/compute/openvswitch_agent.ini'
+# subprocess.call(["sed","--in-place",r"s/\#bridge_mappings =/bridge_mappings = physnet1:"+inf1+"/g",com_openvswitch_ini])
+#
+# print('3')
+# os.system('scp  /root/openstack/compute/ml2_conf.ini root@'+ip_compute+':/etc/neutron/plugins/ml2/')
+#
+# print('4')
+# os.system('scp  /root/openstack/compute/openvswitch_agent.ini root@'+ip_compute+':/etc/neutron/plugins/ml2/')
+#
+# print('5')
+# os.system('ssh root@'+ip_compute+' systemctl restart neutron-openvswitch-agent ')
+#
+# print('\nNeutron Network (FLAT) compute\n')
+# time.sleep(2)
 ##############################  Neutron Network (VXLAN) controller #####################################################
 
 print('\nNeutron Network (VXLAN) controller\n')
 
+ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
+subprocess.call(["sed","--in-place",r"s/\#flat_networks = \*/flat_networks = physnet1/g",ml2_ini])
 subprocess.call(["sed","--in-place",r"s/\#vni_ranges =/vni_ranges = 1:1000/g",ml2_ini])
 
+os.system('systemctl restart neutron-openvswitch-agent ')
+
+openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
 print('1')
 subprocess.call(["sed","--in-place",r"s/\#tunnel_types =/tunnel_types = vxlan/g",openvswitch_ini])
 
 print('2')
-subprocess.call(["sed","--in-place",r"s/\#tunnel_types =/tunnel_types = vxlan/g",openvswitch_ini])
-
-print('3')
 subprocess.call(["sed","--in-place",r"s/\#l2_population = false/l2_population = True/g",openvswitch_ini])
 
-print(4)
+print('3')
 subprocess.call(["sed","--in-place",r"s/\#extensions =/\#extensions =\nprevent_arp_spoofing = True/g",openvswitch_ini])
 
-<<<<<<< HEAD
-print('5')
-subprocess.call(["sed","--in-place",r"s/\#local_ip = <None>/\local_ip = "+ip_controller+"/g",openvswitch_ini])
-=======
+print('4')
 subprocess.call(["sed","--in-place",r"s/\#local_ip = <None>/local_ip = "+ip_controller+"/g",openvswitch_ini])
->>>>>>> ddf9494e2b8c6068d3e6c38a23774f41097148e4
+
+subprocess.call(["sed","--in-place",r"s/\#bridge_mappings =/bridge_mappings = physnet1:"+inf1+"/g",openvswitch_ini])
+
 
 print('6')
-os.system('systemctl restart neutron-server ')
-
-<<<<<<< HEAD
-print('7')
 os.system('''for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do 
 systemctl restart neutron-$service 
-=======
-os.system('''for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; 
-do systemctl restart neutron-$service 
->>>>>>> ddf9494e2b8c6068d3e6c38a23774f41097148e4
 done''')
 
 print('\nNeutron Network (VXLAN) controller done\n')
 time.sleep(2)
 ##############################  Neutron Network (VXLAN) compute ######################################################
+
+
+com_ml2_ini='/root/openstack/compute/ml2_conf.ini'
+com_openvswitch_ini='/root/openstack/compute/openvswitch_agent.ini'
 
 print('\nNeutron Network (VXLAN) compute')
 time.sleep(2)
@@ -768,15 +779,14 @@ print('5')
 subprocess.call(["sed","--in-place",r"s/\#extensions =/\#extensions =\nprevent_arp_spoofing = True/g",com_openvswitch_ini])
 print('6')
 subprocess.call(["sed","--in-place",r"s/\#local_ip = <None>/local_ip = "+ip_compute+"/g",com_openvswitch_ini])
+print('transfer file')
+time.sleep(2)
+os.system('scp  /root/openstack/compute/ml2_conf.ini root@'+ip_compute+':/etc/neutron/plugins/ml2/')
 print('7')
+os.system('scp  /root/openstack/compute/openvswitch_agent.ini root@'+ip_compute+':/etc/neutron/plugins/ml2/')
+print('8')
 os.system('ssh root@'+ip_compute+' "systemctl restart neutron-openvswitch-agent"')
 
-<<<<<<< HEAD
-=======
-os.system('ssh root@'+ip_compute+' "systemctl restart neutron-openvswitch-agent"')
->>>>>>> ddf9494e2b8c6068d3e6c38a23774f41097148e4
-
-####################### sh: -c: line 1: syntax error: unexpected end of file
 
 print('\nNeutron Network (VXLAN) compute done')
 time.sleep(2)
@@ -810,17 +820,10 @@ print('\n add router to external')
 time.sleep(2)
 os.system('source /root/keystonerc && openstack router set router1 --external-gateway external')
 
-<<<<<<< HEAD
+print('\n show network rbac')
 time.sleep(2)
-os.system("source /root/keystonerc && rbacID=$(openstack network rbac list | grep network | awk '{print $2}')")
+os.system('source /root/keystonerc && openstack network rbac list')
 
-
-print('\n show network rbac  ') #########################################################
-time.sleep(2)
-os.system('source /root/keystonerc && openstack network rbac show $rbacID')
-
-=======
->>>>>>> ddf9494e2b8c6068d3e6c38a23774f41097148e4
 print('\n list network')
 time.sleep(2)
 os.system('source /root/keystonerc && openstack network list')
