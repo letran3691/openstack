@@ -389,8 +389,6 @@ time.sleep(3)
 
 os.system('yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova')
 
-print('\nConfig Nova')
-time.sleep(2)
 
 ###################################### config nova node controller #####################################################
 print('\nConfig nova')

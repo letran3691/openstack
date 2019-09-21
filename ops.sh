@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Pre-Requirements
-yum -y install centos-release-openstack-queens
+yum -y install centos-release-openstack-queens epel-release
 yum --enablerepo=centos-openstack-queens -y install mariadb-server
 systemctl enable mariadb
 systemctl start mariadb
+mysql_secure_installation
+
 yum --enablerepo=epel -y install rabbitmq-server memcached
 systemctl start rabbitmq-server memcached
 systemctl enable rabbitmq-server memcached
@@ -17,6 +19,7 @@ mysql -uroot -p123456 -e "create database keystone;"
 mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'localhost' identified by 'password';"
 mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'%' identified by 'password';"
 mysql -uroot -p123456 -e "flush privileges;"
+
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-keystone openstack-utils python-openstackclient httpd mod_wsgi
 
 vi /etc/keystone/keystone.conf
@@ -99,8 +102,8 @@ connection = mysql+pymysql://glance:password@192.168.100.10/glance
 
 # keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://192.168.100.10:5000/v3
-auth_url = http://192.168.100.10:5000/v3
+www_authenticate_uri = http://192.168.100.10:5000
+auth_url = http://192.168.100.10:5000
 memcached_servers = 192.168.100.10:11211
 auth_type = password
 project_domain_name = default
@@ -131,8 +134,8 @@ connection = mysql+pymysql://glance:password@192.168.100.10/glance
 
 # keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://192.168.100.10:5000/v3
-auth_url = http://192.168.100.10:5000/v3
+www_authenticate_uri = http://192.168.100.10:5000
+auth_url = http://192.168.100.10:5000
 memcached_servers = 192.168.100.10:11211
 auth_type = password
 project_domain_name = default
@@ -204,10 +207,10 @@ auth_strategy = keystone
 
 # Glance connection info
 [glance]
-api_servers = http://192.168.100.10:9292/v3
+api_servers = http://192.168.100.10:9292
 
 [oslo_concurrency]
-lock_path = $state_path/tmp
+lock_path = \$state_path/tmp
 
 # MariaDB connection info
 [api_database]
@@ -218,8 +221,8 @@ connection = mysql+pymysql://nova:password@192.168.100.10/nova
 
 # Keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://192.168.100.10:5000/v3
-auth_url = http://192.168.100.10:5000/v3
+www_authenticate_uri = http://192.168.100.10:5000
+auth_url = http://192.168.100.10:5000
 memcached_servers = 192.168.100.10:11211
 auth_type = password
 project_domain_name = default
@@ -229,7 +232,7 @@ username = nova
 password = servicepassword
 
 [placement]
-auth_url = http://192.168.100.10:5000/v3
+auth_url = http://192.168.100.10:5000
 os_region_name = RegionOne
 auth_type = password
 project_domain_name = default
@@ -256,9 +259,15 @@ chmod 640 /etc/nova/nova.conf
 
 vi /etc/httpd/conf.d/00-nova-placement-api.conf
 # add near line 15
-  <Directory /usr/bin>
-    Require all granted
-  </Directory>
+ <Directory /usr/bin>
+        <IfVersion >= 2.4>
+            Require all granted
+        </IfVersion>
+        <IfVersion < 2.4>
+            Order allow,deny
+            Allow from all
+        </IfVersion>
+    </Directory>
 
 su -s /bin/bash nova -c "nova-manage api_db sync"
 su -s /bin/bash nova -c "nova-manage cell_v2 map_cell0"
@@ -294,6 +303,8 @@ enabled = True
 server_listen = 0.0.0.0
 server_proxyclient_address = 192.168.100.10
 novncproxy_base_url = http://192.168.100.10:6080/vnc_auto.html
+
+
 END
 
 systemctl start openstack-nova-compute
@@ -338,8 +349,8 @@ transport_url = rabbit://openstack:password@192.168.100.10
 
 # Keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://192.168.100.10:5000/v3
-auth_url = http://192.168.100.10:5000/v3
+www_authenticate_uri = http://192.168.100.10:5000
+auth_url = http://192.168.100.10:5000
 memcached_servers = 192.168.100.10:11211
 auth_type = password
 project_domain_name = default
@@ -354,7 +365,7 @@ connection = mysql+pymysql://neutron:password@192.168.100.10/neutron_ml2
 
 # Nova connection info
 [nova]
-auth_url = http://192.168.100.10:5000/v3
+auth_url = http://192.168.100.10:5000
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -364,7 +375,7 @@ username = nova
 password = servicepassword
 
 [oslo_concurrency]
-lock_path = $state_path/tmp
+lock_path = \$state_path/tmp
 
 END
 
@@ -407,8 +418,10 @@ vif_plugging_timeout = 300
 
 # add follows to the end : Neutron auth info
 # the value of metadata_proxy_shared_secret is the same with the one in metadata_agent.ini
+
+cat >> "vi /etc/nova/nova.conf" << END
 [neutron]
-auth_url = http://192.168.100.10:5000/v3
+auth_url = http://192.168.100.10:5000
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -418,6 +431,10 @@ username = neutron
 password = servicepassword
 service_metadata_proxy = True
 metadata_proxy_shared_secret = metadata_secret
+
+
+END
+
 
 systemctl start openvswitch
 systemctl enable openvswitch
@@ -434,19 +451,6 @@ done
 systemctl restart openstack-nova-api openstack-nova-compute
 openstack network agent list
 
-------------------------------------------------------------------------------------
-#####Configure Networking(FLAT)
-
-ovs-vsctl add-br br-ens37
-ovs-vsctl add-port br-ens37 ens37
-
-vi /etc/neutron/plugins/ml2/ml2_conf.ini
-#flat_networks = * >> flat_networks = physnet1
-
-vi /etc/neutron/plugins/ml2/openvswitch_agent.ini
-#bridge_mappings = >> bridge_mappings = physnet1:br-ens37
-
-systemctl restart neutron-openvswitch-agent
 
 -----------------------------------------------------------------------------------------
 ###########Configure Horizon
@@ -492,20 +496,36 @@ OPENSTACK_KEYSTONE_DEFAULT_ROLE = "admin"
  ######## BO QUA   Configure Neutron#4 (Network Node)  NEU control, network cung host
   ######## BO QUA Configure Neutron#5 (Compute Node) NEU control, network,compute cung host
 
---------------------------------------- Neutron Network (VXLAN)
+###########################################  Neutron Network (VXLAN)
 
 
 ########	Change settings on Control Node.
 vi /etc/neutron/plugins/ml2/ml2_conf.ini
 
+[ml2_type_vxlan]
+
 #vni_ranges =  >> vni_ranges = 1:1000
 
 systemctl restart neutron-server
 
+
+
+------------------------------------------------------------------------------------
+
 ############## 	Change settings on Network Node.
 
- ovs-vsctl add-br br-eth1
- ovs-vsctl add-port br-eth1 eth1
+ovs-vsctl add-br br-ens37
+ovs-vsctl add-port br-ens37 ens37
+
+vi /etc/neutron/plugins/ml2/ml2_conf.ini
+#flat_networks = * >> flat_networks = physnet1
+
+vi /etc/neutron/plugins/ml2/openvswitch_agent.ini
+#bridge_mappings = >> bridge_mappings = physnet1:br-ens37
+
+systemctl restart neutron-openvswitch-agent
+
+
 
 vi /etc/neutron/plugins/ml2/ml2_conf.ini
 # line 235: add
@@ -518,7 +538,7 @@ vi /etc/neutron/plugins/ml2/openvswitch_agent.ini
 #l2_population = false >> l2_population = True
 prevent_arp_spoofing = True
 #local_ip = <None> >> local_ip = 192.168.100.10
-#bridge_mappings = >> bridge_mappings = physnet1:br-ens37
+
 
 for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
 systemctl restart neutron-$service
@@ -533,26 +553,26 @@ prevent_arp_spoofing = True
 #local_ip = <None> >> local_ip = 192.168.100.10
 
 
-openstack router create router01
-openstack network create internal --provider-network-type vxlan
-
-openstack subnet create sub-inter --network internal \
-> --subnet-range 10.0.0.0/24 --gateway 10.0.0.1 \
-> --dns-nameserver 8.8.8.8
-
-openstack router add subnet router01 sub-inter
-openstack network create \
-> --provider-physical-network physnet1 \
-> --provider-network-type flat --external external
-openstack subnet create sub-inter --network external --subnet-range 192.168.1.0/24 --allocation-pool start=192.168.1.200,end=192.168.1.230 --gateway 192.168.1.1 --dns-nameserver 8.8.8.8 --no-dhcp
-openstack router set router01 --external-gateway external
-
-openstack network list
-openstack project list
-
-netID=$(openstack network list | grep internal | awk '{ print $2 }')
-prjID=$(openstack project list | grep admin | awk '{ print $2 }')
-openstack network rbac create --target-project $prjID --type network --action access_as_shared $netID
+#openstack router create router01
+#openstack network create internal --provider-network-type vxlan
+#
+#openstack subnet create sub-inter --network internal \
+#> --subnet-range 10.0.0.0/24 --gateway 10.0.0.1 \
+#> --dns-nameserver 8.8.8.8
+#
+#openstack router add subnet router01 sub-inter
+#openstack network create \
+#> --provider-physical-network physnet1 \
+#> --provider-network-type flat --external external
+#openstack subnet create sub-inter --network external --subnet-range 192.168.1.0/24 --allocation-pool start=192.168.1.200,end=192.168.1.230 --gateway 192.168.1.1 --dns-nameserver 8.8.8.8 --no-dhcp
+#openstack router set router01 --external-gateway external
+#
+#openstack network list
+#openstack project list
+#
+#netID=$(openstack network list | grep internal | awk '{ print $2 }')
+#prjID=$(openstack project list | grep admin | awk '{ print $2 }')
+#openstack network rbac create --target-project $prjID --type network --action access_as_shared $netID
 
 
 
