@@ -16,7 +16,7 @@ netmask = input('Nhap sunetmask: ')
 gw = input('Nhap gateway: ')
 
 user = 'admin'
-pass_admin = input('Nhap password admin: ')
+pass_admin = input('\nNhap password admin: ')
 rabbitmq_user = 'openstack'
 pass_rabbitmq = input('Nhap password RabbitMQ: ')
 rootsql = input('Nhap password root sql: ')
@@ -66,7 +66,11 @@ time.sleep(3)
                                 ####basic
 def requirements ():
     #os.system('yum -y install centos-release-openstack-queens epel-release')
-    os.system('yum --enablerepo=centos-openstack-queens -y install mariadb-server')
+    os.system('curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash')
+    os.system('yum -y install MariaDB-server')
+
+    server_conf = '/etc/my.cnf.d/server.cnf'
+    subprocess.call(["sed", "--in-place", r"s/\[mysqld]/[mysqld]\ncharacter-set-server=utf8/g", server_conf])
     os.system('systemctl enable mariadb && systemctl start mariadb')
 
 
@@ -298,28 +302,20 @@ def nova_Keystone():
     time.sleep(2)
 
     os.system("mysql -uroot -p" + rootsql + " -e \"create database nova;\"")
-    os.system(
-        "mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova.* to nova@'localhost' identified by"' \'' + pass_user_sql + '\''';\"')
-    os.system(
-        "mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova.* to nova@'%' identified by"' \'' + pass_user_sql + '\''';\"')
+    os.system("mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova.* to nova@'localhost' identified by"' \'' + pass_user_sql + '\''';\"')
+    os.system("mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova.* to nova@'%' identified by"' \'' + pass_user_sql + '\''';\"')
 
     os.system("mysql -uroot -p" + rootsql + " -e \"create database nova_api;\"")
-    os.system(
-        "mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_api.* to nova@'localhost' identified by"' \'' + pass_user_sql + '\''';\"')
-    os.system(
-        "mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_api.* to nova@'%' identified by"' \'' + pass_user_sql + '\''';\"')
+    os.system("mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_api.* to nova@'localhost' identified by"' \'' + pass_user_sql + '\''';\"')
+    os.system("mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_api.* to nova@'%' identified by"' \'' + pass_user_sql + '\''';\"')
 
     os.system("mysql -uroot -p" + rootsql + " -e \"create database nova_placement;\"")
-    os.system(
-        "mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_placement.* to nova@'localhost' identified by"' \'' + pass_user_sql + '\''';\"')
-    os.system(
-        "mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_placement.* to nova@'%' identified by"' \'' + pass_user_sql + '\''';\"')
+    os.system("mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_placement.* to nova@'localhost' identified by"' \'' + pass_user_sql + '\''';\"')
+    os.system("mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_placement.* to nova@'%' identified by"' \'' + pass_user_sql + '\''';\"')
 
     os.system("mysql -uroot -p" + rootsql + " -e \"create database nova_cell0;\"")
-    os.system(
-        "mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_cell0.* to nova@'localhost' identified by"' \'' + pass_user_sql + '\''';\"')
-    os.system(
-        "mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_cell0.* to nova@'%' identified by"' \'' + pass_user_sql + '\''';\"')
+    os.system("mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_cell0.* to nova@'localhost' identified by"' \'' + pass_user_sql + '\''';\"')
+    os.system("mysql -uroot -p" + rootsql + " -e \"grant all privileges on nova_cell0.* to nova@'%' identified by"' \'' + pass_user_sql + '\''';\"')
     os.system("mysql -uroot -p" + rootsql + " -e \"flush privileges;\"")
 ########################################################################################################################
 
@@ -327,9 +323,6 @@ def nova_install_conf():
     print('\nInstall Nova services\n')
     time.sleep(3)
     os.system('yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova')
-
-    print('\nConfig nova')
-    time.sleep(2)
 
     print('\nConfig nova')
     time.sleep(2)
@@ -381,16 +374,16 @@ def nova_compute():
 
     with open("/etc/nova/nova.conf",'a+') as nova:
         nova.write('''\n\n
-        [vnc]
-        enabled = True
-        server_listen = 0.0.0.0
-        server_proxyclient_address = '''+ip_controller+'''
-        novncproxy_base_url = http://'''+ip_controller+''':6080/vnc_auto.html''')
+[vnc]
+enabled = True
+server_listen = 0.0.0.0
+server_proxyclient_address = '''+ip_controller+'''
+novncproxy_base_url = http://'''+ip_controller+''':6080/vnc_auto.html\n\n''')
 
     os.system("systemctl start openstack-nova-compute && systemctl enable openstack-nova-compute")
 
     os.system('su -s /bin/bash nova -c "nova-manage cell_v2 discover_hosts"')
-    os.system('openstack compute service list')
+    os.system('source /root/keystonerc && openstack compute service list')
 
 #######################################################################################################################
 
@@ -475,17 +468,17 @@ def neutron_server():
     subprocess.call(["sed", "--in-place",r"s/\#neutron/\nuse_neutron = True\nlinuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver\nfirewall_driver = nova.virt.firewall.NoopFirewallDriver\nvif_plugging_is_fatal = True\nvif_plugging_timeout = 300\n/g",con_nova_conf])
 
     with open('/etc/nova/nova.conf', 'a+') as nova:
-        nova.write('''\n[neutron]
-    auth_url = http://''' + ip_controller + ''':5000
-    auth_type = password
-    project_domain_name = default
-    user_domain_name = default
-    region_name = RegionOne
-    project_name = service
-    username = neutron
-    password = ''' + pass_project_user + '''
-    service_metadata_proxy = True
-    metadata_proxy_shared_secret = metadata_secret''')
+        nova.write('''\n\n\n[neutron]
+auth_url = http://''' + ip_controller + ''':5000
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+region_name = RegionOne
+project_name = service
+username = neutron
+password = ''' + pass_project_user + '''
+service_metadata_proxy = True
+metadata_proxy_shared_secret = metadata_secret''')
         nova.close()
     os.system('systemctl start openvswitch && systemctl enable openvswitch')
 
@@ -531,8 +524,8 @@ def config_vxlan_control():
 
 def config_vxlan_network():
 
-    os.system('ssh root@'+ip_compute+' ovs-vsctl add-br br-'+inf1)
-    os.system('ssh root@'+ip_compute+' ovs-vsctl add-port br-'+inf1+' '+inf1)
+    os.system('ovs-vsctl add-br br-'+inf1)
+    os.system('ovs-vsctl add-port br-'+inf1+' '+inf1)
 
     print('1')
     net_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
@@ -557,7 +550,7 @@ def conf_vxlan_compute():
     subprocess.call(["sed", "--in-place", r"s/\#tunnel_types =/tunnel_types = vxlan/g", com_openvswitch_ini])
     subprocess.call(["sed", "--in-place", r"s/\#l2_population = false/l2_population = True/g", com_openvswitch_ini])
     subprocess.call(["sed", "--in-place", r"s/\#extensions =/\#extensions =\nprevent_arp_spoofing = True/g", com_openvswitch_ini])
-    subprocess.call(["sed", "--in-place", r"s/\#local_ip = <None>/local_ip = " + ip_compute + "/g", com_openvswitch_ini])
+    subprocess.call(["sed", "--in-place", r"s/\#local_ip = <None>/local_ip = " + ip_controller + "/g", com_openvswitch_ini])
     os.system('systemctl restart neutron-openvswitch-agent')
 
 def key_private():
@@ -566,20 +559,41 @@ def key_private():
     os.system("source /root/keystonerc && openstack keypair create --public-key /root/.ssh/id_rsa.pub mykey")
 
 
+n = ''
+while n != 'q':
+    print('\n+ {:-<6} + {:-^15} + '.format('', ''))
+    print('| {:<20} | '.format('please enter your option'.title()))
+    print('| {:<24} | '.format('[1]enter Install ALL IN ONE: '))
+    print('| {:<25} '.format('[2]enter 2 Node Controll-Compute: '))
+    print('| {:<25} '.format('[3]enter 3 Node Controll-Network-Compute: '))
+    print('| {:<25} '.format('[4]enter 3 Node Controll-Compute-Storage: '))
+    print('| {:<25} '.format('[q]enter q to exit: '))
+    print('+ {:-<6} + {:-^15} + '.format('', ''))
+    n = input('\nenter option: '.title())
 
-requirements()
-keytone()
-glance()
-nova_Keystone()
-nova_install_conf()
-nova_compute()
-neutron_Keystone()
-neutron_server()
-horizon_install()
-config_vxlan_control()
-config_vxlan_network()
-conf_vxlan_compute()
-keytone()
+    if n == '1':
+        requirements()
+        keytone()
+        glance()
+        nova_Keystone()
+        nova_install_conf()
+        nova_compute()
+        neutron_Keystone()
+        neutron_server()
+        horizon_install()
+        config_vxlan_control()
+        config_vxlan_network()
+        key_private()
+    if n == '2':
+        exit(0)
+    if n == '3':
+        exit(0)
+    if n =='q':
+        exit(0)
+
+print('Install Openstack ALL IN ONE done.')
+
+print("\nDashboard: http://"+ip_controller+"/dashboard\ndomain: default\nUser : admin\npassword: "+pass_admin)
 
 
 
