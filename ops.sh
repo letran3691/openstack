@@ -1,11 +1,20 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 
 controller='192.168.100.10'
+compute='192.168.100.11'
+network='192.168.100.12'
 
 
 echo "Create key ssh"
 sleep 2
 ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
+
+systemctl stop firewalld && systemctl disable firewalld
+systemctl stop NetworkManager && systemctl disable NetworkManager
+
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
+
 
 requirements(){
 echo "\nrequirements"
@@ -124,6 +133,8 @@ bind_host = 0.0.0.0
 stores = file,http
 default_store = file
 filesystem_store_datadir = /var/lib/glance/images/
+debug = true
+
 
 [database]
 # MariaDB connection info
@@ -158,6 +169,7 @@ bind_host = 0.0.0.0
 stores = file,http
 default_store = file
 filesystem_store_datadir = /var/lib/glance/images/
+debug = true
 
 [database]
 # MariaDB connection info
@@ -241,6 +253,7 @@ enabled_apis = osapi_compute,metadata
 log_dir = /var/log/nova
 # RabbitMQ connection info
 transport_url = rabbit://openstack:password@$controller
+debug = true
 
 #neutron
 
@@ -300,18 +313,7 @@ END
 chgrp nova /etc/nova/nova.conf
 chmod 640 /etc/nova/nova.conf
 
-#vi /etc/httpd/conf.d/00-nova-placement-api.conf
 cp -f /root/openstack/controller/00-nova-placement-api.conf /etc/httpd/conf.d/
-# add near line 15
-# <Directory /usr/bin>
-#        <IfVersion >= 2.4>
-#            Require all granted
-#        </IfVersion>
-#        <IfVersion < 2.4>
-#            Order allow,deny
-#            Allow from all
-#        </IfVersion>
-#  </Directory>
 
 su -s /bin/bash nova -c "nova-manage api_db sync"
 su -s /bin/bash nova -c "nova-manage cell_v2 map_cell0"
@@ -342,9 +344,6 @@ systemctl enable libvirtd
 
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova-compute
 
-#vi /etc/nova/nova.conf
-
-# add follows (enable VNC)
 cat >> /etc/nova/nova.conf << END
 
 
@@ -383,7 +382,7 @@ mysql -u root -p123456 -e "flush privileges;"
 }
 ############################################## neutron ALL IN ONE ######################################
 neutron_server(){
-printf "\nInstall neutron server"
+printf "Install neutron server\n"
 sleep 2
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch
 
@@ -401,6 +400,7 @@ notify_nova_on_port_status_changes = True
 notify_nova_on_port_data_changes = True
 # RabbitMQ connection info
 transport_url = rabbit://openstack:password@$controller
+debug = true
 
 # Keystone auth info
 [keystone_authtoken]
@@ -442,8 +442,7 @@ sed -i "s/\#interface_driver = <None>/interface_driver = openvswitch/g" $l3_ini
 
 dhcp_ini='/etc/neutron/dhcp_agent.ini'
 sed -i "s/\#interface_driver = <None>/interface_driver = openvswitch/g" $dhcp_ini
-sed -i "s/\#dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq/dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq/g" $dhcp_ini
-sed -i "s/\#enable_isolated_metadata = fale/enable_isolated_metadata = true/g" $dhcp_ini
+sed -i "s/\#dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq/dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq\n\nenable_isolated_metadata = true/g" $dhcp_ini
 
 metadata_ini='/etc/neutron/metadata_agent.ini'
 sed -i "s/\#nova_metadata_host = 127.0.0.1/nova_metadata_host = $controller/g" $metadata_ini
@@ -451,7 +450,7 @@ sed -i "s/\#metadata_proxy_shared_secret =/metadata_proxy_shared_secret = metada
 sed -i "s/\#memcache_servers = localhost:11211/memcache_servers = $controller:11211/g" $metadata_ini
 
 ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
-sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneveb/type_drivers = local,flat,vlan,gre,vxlan,geneve/g" $ml2_ini
+sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" $ml2_ini
 sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" $ml2_ini
 sed -i "s/\#mechanism_drivers =/mechanism_drivers = openvswitch,l2population/g" $ml2_ini
 sed -i "s/\#extension_drivers =/extension_drivers = port_security/g" $ml2_ini
@@ -462,20 +461,8 @@ sed -i "s/\#firewall_driver = <None>/firewall_driver = openvswitch/g" $openvswit
 sed -i "s/\#enable_security_group = true/enable_security_group = true/g" $openvswitch_ini
 sed -i "s/\#enable_ipset = true/enable_ipset = true/g" $openvswitch_ini
 
-
-##vi /etc/nova/nova.conf
-## add follows into [DEFAULT] section
-#use_neutron = True
-#linuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver
-#firewall_driver = nova.virt.firewall.NoopFirewallDriver
-#vif_plugging_is_fatal = True
-#vif_plugging_timeout = 300
-
 con_nova_conf='/etc/nova/nova.conf'
 sed -i "s/\#neutron/use_neutron = True\nlinuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver\nfirewall_driver = nova.virt.firewall.NoopFirewallDriver\nvif_plugging_is_fatal = True\nvif_plugging_timeout = 300/g" $con_nova_conf
-
-# add follows to the end : Neutron auth info
-# the value of metadata_proxy_shared_secret is the same with the one in metadata_agent.ini
 
 cat >> "/etc/nova/nova.conf" << END
 [neutron]
@@ -493,7 +480,6 @@ metadata_proxy_shared_secret = metadata_secret
 
 END
 
-
 systemctl start openvswitch
 systemctl enable openvswitch
 ovs-vsctl add-br br-int
@@ -507,7 +493,7 @@ systemctl enable neutron-$service
 done
 
 systemctl restart openstack-nova-api openstack-nova-compute
-openstack network agent list
+source keystonerc && openstack network agent list
 
 }
 
@@ -515,7 +501,7 @@ openstack network agent list
 
 horizon_install(){
 
-printf "\nhorizon_install"
+printf "horizon_install\n"
 sleep 2
 
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-dashboard
@@ -530,113 +516,145 @@ sed -i "s/OPENSTACK_HOST = \"127.0.0.1\"/OPENSTACK_HOST = \"$controller\"/g" $lo
 dashboard_conf='/etc/httpd/conf.d/openstack-dashboard.conf'
 sed -i "s/WSGISocketPrefix run\/wsgi/WSGISocketPrefix run\/wsgi\nWSGIApplicationGroup %{GLOBAL}/g" $dashboard_conf
 
-printf "\nrestart httpd"
+printf "Restart httpd\n"
 systemctl restart httpd
 
-}
 
+}
 
  ######## BO QUA Configure Neutron#3 (Control Node) NEU control, network cung host
  ######## BO QUA   Configure Neutron#4 (Network Node)  NEU control, network cung host
   ######## BO QUA Configure Neutron#5 (Compute Node) NEU control, network,compute cung host
 
 ###########################################  Neutron Network (VXLAN)
-config_vxlan_control(){
 
-printf "\nconfig_vxlan_control"
-sleep 2
+vxlan_all(){
+    prinf "config vxlan\n"
+    all_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
+    sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" $all_ml2_ini
+    sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" $all_ml2_ini
+    sed -i "s/\#flat_networks = \*/flat_networks = physnet1/g" $all_ml2_ini
+    sed -i "s/\[ml2_type_vxlan]/\[ml2_type_vxlan]\n\#ranges =/g" $all_ml2_ini
+    sed -i "s/\#ranges =/\nvni_ranges = 1:1000/" $all_ml2_ini
 
-########	Change settings on Control Node.
-com_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
+    ovs-vsctl add-br br-ens37
+    ovs-vsctl add-port br-ens37 ens37
 
-sed -i "s/\[ml2_type_vxlan]/\[ml2_type_vxlan\]\nvni_ranges = 1:1000/g" $com_ml2_ini
+    all_openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
+    sed -i "s/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_population = True\nprevent_arp_spoofing = True/g" $all_openvswitch_ini
+    sed -i "s/\#local_ip = <None>/local_ip = $controller/g" $all_openvswitch_ini
+    sed -i "s/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g" $all_openvswitch_ini
 
-#vni_ranges =  >> vni_ranges = 1:1000
+    systemctl restart neutron-server
+    for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
+    systemctl restart neutron-$service
+    done
+    systemctl restart neutron-openvswitch-agent
 
-printf "\nrestart neutron"
-systemctl restart neutron-server
+    printf "config VXLAN done"
+
+}
+
+vxlan_con(){
+    prinf "config vxlan controller\n"
+    con_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
+    sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" con_ml2_ini
+    sed -i "s/\#flat_networks = \*/flat_networks = physnet1/g" con_ml2_ini
+    sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" con_ml2_ini
+    sed -i "s/\[ml2_type_vxlan]/\[ml2_type_vxlan]\n\#ranges =/g" con_ml2_ini
+    sed -i "s/\#ranges =/\nvni_ranges = 1:1000/" con_ml2_ini
+
+    systemctl restart neutron-server
+
+     printf "config VXLAN on controller done"
 
 }
 
 
+vxlan_net(){
+    prinf "config vxlan network\n"
+    ovs-vsctl add-br br-ens37
+    ovs-vsctl add-port br-ens37 ens37
 
-############## 	Change settings on Network Node.
+    net_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
+    sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" net_ml2_ini
+    sed -i "s/\#flat_networks = \*/flat_networks = physnet1/g" net_ml2_ini
+    sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" net_ml2_ini
+    sed -i "s/\[ml2_type_vxlan]/\[ml2_type_vxlan]\n\#ranges =/g" net_ml2_ini
+    sed -i "s/\#ranges =/\nvni_ranges = 1:1000/" net_ml2_ini
 
-config_vxlan_network(){
+    net_openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
+    sed -i "s/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_population = True\nprevent_arp_spoofing = True/g" $net_openvswitch_ini
+    sed -i "s/\#local_ip = <None>/local_ip = $network/g" $net_openvswitch_ini
+    sed -i "s/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g" $net_openvswitch_ini
 
-printf "\nconfig_vxlan_network"
-sleep 2
+    systemctl restart neutron-openvswitch-agent
 
-ovs-vsctl add-br br-ens37
-ovs-vsctl add-port br-ens37 ens37
-
-net_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
-sed -i "s/\#flat_networks = */flat_networks = physnet1/g" $net_ml2_ini
-
-net_openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
-sed -i "s/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g" $net_openvswitch_ini
-
-systemctl restart neutron-openvswitch-agent
-
-
-
-#vi /etc/neutron/plugins/ml2/ml2_conf.ini
-## line 235: add
-##[ml2_type_vxlan]
-##vni_ranges = 1:1000
-sed -i "s/\[ml2_type_vxlan]/\[ml2_type_vxlan\]\nvni_ranges = 1:1000/g" $net_ml2_ini
-
-
-net_openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
-
-sed -i "s/\[agent\]/\[agent]\ntunnel_types = vxlan\nl2_population = True\nprevent_arp_spoofing = True/g" $net_openvswitch_ini
-sed -i "s/\#local_ip = <None>/local_ip = $controller/g" $net_openvswitch_ini
-
-
-for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
-systemctl restart neutron-$service
-done
+    printf "config VXLAN on Network done"
 }
 
-###############	Change settings on Compute Node.
-conf_vxlan_compute(){
 
-printf "\nconf_vxlan_compute"
-sleep 2
+vxlan_com(){
 
-com_openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
-sed -i "s/\[agent]/\[agent]ntunnel_types = vxlan\l2_population = True\nprevent_arp_spoofing = True/g" $com_openvswitch_ini
-sed -i "s/\#local_ip = <None>/local_ip = $controller/g" $com_openvswitch_ini
+    prinf "config vxlan compute\n"
+    com_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
+    sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" $com_ml2_ini
+    sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" $com_ml2_ini
+    sed -i "s/\#flat_networks = \*/flat_networks = physnet1/g" $com_ml2_ini
+    sed -i "s/\[ml2_type_vxlan]/\[ml2_type_vxlan]\n\#ranges =/g" $com_ml2_ini
+    sed -i "s/\#ranges =/\nvni_ranges = 1:1000/" $com_ml2_ini
+
+    com_openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
+    sed -i "s/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_population = True\nprevent_arp_spoofing = True/g" $com_openvswitch_ini
+    sed -i "s/\#local_ip = <None>/local_ip = $compute/g"
+    systemctl restart neutron-server
+
+    printf "config VXLAN on Computer done"
+
+
 }
 
 key_private(){
 
-printf "\nkey_private"
+printf "key_private\n"
 sleep 2
 
 source /root/keystonerc && openstack keypair create --public-key /root/.ssh/id_rsa.pub mykey
 
 }
 
-requirements
-keytone
-glance
-nova_Keystone
-nova_install_conf
-nova_compute
-neutron_Keystone
-neutron_server
-horizon_install
-config_vxlan_control
-config_vxlan_network
-key_private
+options=("Install ALL IN ONE" "2 NODE CONTROLLER-COMPUTE" "3 NODE CONTROLLER-NETWORK-COMPUTE" "3 NODE CONTROLLER-COMPUTE-STORAGE" ) # End Options
 
+printf "=========================================================================\n"
+printf "                          Menu\n"
+printf "=========================================================================\n"
+PS3="
+$prompt"
+select opt in "${options[@]}" "THOAT"; do
 
+    case "$REPLY" in
+	    1 ) requirements
+	        keytone
+	        glance
+	        nova_Keystone
+	        nova_install_conf
+	        nova_compute
+	        neutron_Keystone
+	        neutron_server
+	        horizon_install
+	        vxlan_all
+	        key_private
+	        reboot;;
+	    2 ) exit;;
+	    3 ) exit;;
+		    # End Menu
 
+	    $(( ${#options[@]}+1 )) ) printf "\nChao tam biet!\nHen gap lai ban o https://emobi.vn/\n\n"; break;;
+	    *) echo "Ban nhap sai, vui long nhap theo so thu tu tren danh sach";continue;;
 
+    esac
 
-
-
+done
 
 
 
