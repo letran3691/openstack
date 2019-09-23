@@ -55,8 +55,8 @@ sleep 2
 ################ Configure Keystone#1
 
 mysql -uroot -p123456 -e "create database keystone;"
-mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'localhost' identified by 'password';"
-mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'%' identified by 'password';"
+mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'localhost' identified by '"$pass_user_sql"';"
+mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'%' identified by '"$pass_user_sql"';"
 mysql -uroot -p123456 -e "flush privileges;"
 
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-keystone openstack-utils python-openstackclient httpd mod_wsgi
@@ -119,8 +119,8 @@ openstack endpoint create --region RegionOne image internal http://$controller:9
 openstack endpoint create --region RegionOne image admin http://$controller:9292
 
 mysql -uroot -p123456 -e "create database glance;"
-mysql -uroot -p123456 -e "grant all privileges on glance.* to glance@'localhost' identified by 'password';"
-mysql -uroot -p123456 -e "grant all privileges on glance.* to glance@'%' identified by 'password';"
+mysql -uroot -p123456 -e "grant all privileges on glance.* to glance@'localhost' identified by '"$pass_user_sql"';"
+mysql -uroot -p123456 -e "grant all privileges on glance.* to glance@'%' identified by '"$pass_user_sql"';"
 mysql -uroot -p123456 -e "flush privileges;"
 
 printf "\nInstall glance"
@@ -225,17 +225,17 @@ source keystonerc && openstack endpoint create --region RegionOne placement admi
 
 
 mysql -u root -p123456 -e "create database nova;"
-mysql -u root -p123456 -e "grant all privileges on nova.* to nova@'localhost' identified by 'password';"
-mysql -u root -p123456 -e "grant all privileges on nova.* to nova@'%' identified by 'password';"
+mysql -u root -p123456 -e "grant all privileges on nova.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p123456 -e "grant all privileges on nova.* to nova@'%' identified by '"$pass_user_sql"';"
 mysql -u root -p123456 -e "create database nova_api;"
-mysql -u root -p123456 -e "grant all privileges on nova_api.* to nova@'localhost' identified by 'password';"
-mysql -u root -p123456 -e "grant all privileges on nova_api.* to nova@'%' identified by 'password';"
+mysql -u root -p123456 -e "grant all privileges on nova_api.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p123456 -e "grant all privileges on nova_api.* to nova@'%' identified by '"$pass_user_sql"';"
 mysql -u root -p123456 -e "create database nova_placement;"
-mysql -u root -p123456 -e "grant all privileges on nova_placement.* to nova@'localhost' identified by 'password';"
-mysql -u root -p123456 -e "grant all privileges on nova_placement.* to nova@'%' identified by 'password';"
+mysql -u root -p123456 -e "grant all privileges on nova_placement.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p123456 -e "grant all privileges on nova_placement.* to nova@'%' identified by '"$pass_user_sql"';"
 mysql -u root -p123456 -e "create database nova_cell0;"
-mysql -u root -p123456 -e "grant all privileges on nova_cell0.* to nova@'localhost' identified by 'password';"
-mysql -u root -p123456 -e "grant all privileges on nova_cell0.* to nova@'%' identified by 'password';"
+mysql -u root -p123456 -e "grant all privileges on nova_cell0.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p123456 -e "grant all privileges on nova_cell0.* to nova@'%' identified by '"$pass_user_sql"';"
 mysql -u root -p123456 -e "flush privileges;"
 
 }
@@ -380,13 +380,13 @@ source keystonerc && openstack endpoint create --region RegionOne network intern
 source keystonerc && openstack endpoint create --region RegionOne network admin http://$controller:9696
 
 mysql -u root -p123456 -e "create database neutron_ml2;"
-mysql -u root -p123456 -e "grant all privileges on neutron_ml2.* to neutron@'localhost' identified by 'password';"
-mysql -u root -p123456 -e "grant all privileges on neutron_ml2.* to neutron@'%' identified by 'password';"
+mysql -u root -p123456 -e "grant all privileges on neutron_ml2.* to neutron@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p123456 -e "grant all privileges on neutron_ml2.* to neutron@'%' identified by '"$pass_user_sql"';"
 mysql -u root -p123456 -e "flush privileges;"
 
 }
 ############################################## neutron ALL IN ONE ######################################
-neutron_server(){
+neutron_server_all(){
 printf "Install neutron server\n"
 sleep 2
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch
@@ -497,12 +497,14 @@ systemctl start neutron-$service
 systemctl enable neutron-$service
 done
 
+
 systemctl restart neutron-server neutron-metadata-agent
 systemctl enable neutron-server neutron-metadata-agent
 systemctl restart openstack-nova-api openstack-nova-compute
 source keystonerc && openstack network agent list
 
 }
+
 
 
 neutron_control(){
@@ -521,13 +523,111 @@ sed -i "s/\#extension_drivers =/extension_drivers = port_security/g" $netwok_ml2
 }
 
 
+neutron_server_control(){
+    printf "Install neutron server\n"
+    sleep 2
+
+    yum -y install centos-release-openstack-queens epel-release
+    sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo
+    yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2
+
+    cat > "/etc/neutron/neutron.conf" << END
+# create new
+[DEFAULT]
+core_plugin = ml2
+service_plugins = router
+auth_strategy = keystone
+state_path = /var/lib/neutron
+dhcp_agent_notification = True
+allow_overlapping_ips = True
+notify_nova_on_port_status_changes = True
+notify_nova_on_port_data_changes = True
+# RabbitMQ connection info
+transport_url = rabbit://openstack:$pass_rabbitmq@$controller
+
+# Keystone auth info
+[keystone_authtoken]
+www_authenticate_uri = http://$controller:5000
+auth_url = http://$controller:5000
+memcached_servers = $controller:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = neutron
+password = servicepassword
+
+# MariaDB connection info
+[database]
+connection = mysql+pymysql://neutron:password@$controller/neutron_ml2
+
+# Nova connection info
+[nova]
+auth_url = http://$controller:5000
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+region_name = RegionOne
+project_name = service
+username = nova
+password = $pass_project_user
+
+[oslo_concurrency]
+lock_path = \$state_path/tmp
+
+END
+
+    chmod 640 /etc/neutron/neutron.conf  && chgrp neutron /etc/neutron/neutron.conf
+
+    metadata_ini_con='/etc/neutron/metadata_agent.ini'
+    sed -i "s/\#nova_metadata_host = 127.0.0.1/nova_metadata_host = $controller/g" $metadata_ini_con
+    sed -i "s/\#metadata_proxy_shared_secret =/metadata_proxy_shared_secret = metadata_secret/g" $metadata_ini_con
+    sed -i "s/\#memcache_servers = localhost:11211/memcache_servers = $controller:11211/g" $metadata_ini_con
+
+    ml2_ini_control='/etc/neutron/plugins/ml2/ml2_conf.ini'
+    sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" $ml2_ini_control
+    sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" $ml2_ini_control
+    sed -i "s/\#mechanism_drivers =/mechanism_drivers = openvswitch,l2population/g" $ml2_ini_control
+    sed -i "s/\#extension_drivers =/extension_drivers = port_security/g" $ml2_ini_control
+
+
+    con_nova_conf='/etc/nova/nova.conf'
+    sed -i "s/\#neutron/use_neutron = True\nlinuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver\nfirewall_driver = nova.virt.firewall.NoopFirewallDriver\nvif_plugging_is_fatal = True\nvif_plugging_timeout = 300/g" $con_nova_conf
+
+    cat >> "/etc/nova/nova.conf" << END
+[neutron]
+auth_url = http://$controller:5000
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+region_name = RegionOne
+project_name = service
+username = neutron
+password = servicepassword
+service_metadata_proxy = True
+metadata_proxy_shared_secret = metadata_secret
+
+
+END
+
+
+    ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini
+    su -s /bin/bash neutron -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"
+
+    systemctl restart neutron-server neutron-metadata-agent
+    systemctl enable neutron-server neutron-metadata-agent
+    systemctl restart openstack-nova-api openstack-nova-compute
+
+}
+
+
 network_node(){
 
     printf="install and config netron service\n"
     sleep 2
-    yum -y install centos-release-openstack-queens epel-release
-    sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo
-    yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch
+    ssh root@$network "yum -y install centos-release-openstack-queens epel-release"
+    ssh root@$network "sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo"
+    ssh root@$network "yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch"
 
     net_neutron="/root/openstack/network/neutron.conf"
     sed -i "/ip_controller/$controller/g" $net_neutron
@@ -547,10 +647,10 @@ network_node(){
 
     scp
 
-    ssh root@$compute "ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini"
-    ssh root@$compute "systemctl start openvswitch && systemctl enable openvswitch"
-    ssh root@$compute "ovs-vsctl add-br br-int"
-    ssh root@$compute "for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
+    ssh root@$network "ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini"
+    ssh root@$network "systemctl start openvswitch && systemctl enable openvswitch"
+    ssh root@$network "ovs-vsctl add-br br-int"
+    ssh root@$network "for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
 systemctl start neutron-\$service
 systemctl enable neutron-\$service
 done"
@@ -562,13 +662,13 @@ printf="install and config netron service done\n"
 compute_node(){
     printf "Install libvirt and nova-compute\n"
     sleep 2
-    yum -y install centos-release-openstack-queens epel-release
-    sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo
-    yum -y install qemu-kvm libvirt virt-install
-    systemctl start libvirtd
-    systemctl enable libvirtd
+    ssh root@$compute "yum -y install centos-release-openstack-queens epel-release"
+    ssh root@$compute "sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo"
+    ssh root@$compute "yum -y install qemu-kvm libvirt virt-install"
+    ssh root@$compute "systemctl start libvirtd && systemctl enable libvirtd"
 
-    yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova-compute
+
+    ssh root@$compute "yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova-compute"
 
     com_nova='/root/openstack/compute/nova.conf'
     sed -i "s/ip_compute/$compute/g" $com_nova
@@ -588,7 +688,7 @@ compute_node(){
 
     printf "Install neutron, openvswitch\n"
     sleep 2
-    yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch
+    ssh root@$compute "yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch"
 
     com_neutron='/root/openstack/compute/neutron.conf'
     sed -i "/ip_controller/$controller/g" $com_neutron
@@ -718,8 +818,8 @@ vxlan_con(){
 
 vxlan_net(){
     prinf "config vxlan network\n"
-    ovs-vsctl add-br br-ens37
-    ovs-vsctl add-port br-ens37 ens37
+    ssh root@$network "ovs-vsctl add-br br-ens37"
+    ssh root@$network "ovs-vsctl add-port br-ens37 ens37"
 
     net_ml2_ini_vxlan='/etc/neutron/plugins/ml2/ml2_conf.ini'
     sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" $net_ml2_ini_vxlan
@@ -733,7 +833,7 @@ vxlan_net(){
     sed -i "s/\#local_ip = <None>/local_ip = $network/g" $net_openvswitch_ini_vxlan
     sed -i "s/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g" $net_openvswitch_ini_vxlan
 
-    systemctl restart neutron-openvswitch-agent
+    ssh root@$network "systemctl restart neutron-openvswitch-agent"
 
     printf "config VXLAN on Network done"
 }
@@ -788,7 +888,7 @@ select opt in "${options[@]}" "THOAT"; do
 	        nova_install_conf
 	        nova_compute
 	        neutron_Keystone
-	        neutron_server
+	        neutron_server_all
 	        horizon_install
 	        vxlan_all
 	        key_private
@@ -800,7 +900,7 @@ select opt in "${options[@]}" "THOAT"; do
 	        nova_install_conf
 	        nova_compute
 	        neutron_Keystone
-	        neutron_server
+	        neutron_server_all
 	        horizon_install
 	        compute_node
 	        vxlan_all
