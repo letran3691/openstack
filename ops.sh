@@ -767,15 +767,14 @@ mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'localhos
 mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'%' identified by '"$pass_project_user"';"
 mysql -uroot -p$rootsql -e "flush privileges;"
 
-printf "===============================Install Cinder Service==============================="
+printf "===============================Install Cinder Service ==============================="
+#controller
 sleep 2
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-cinder
 
 
 cat > "/etc/cinder/cinder.conf" << END
-
-
-    # create new
+# create new
 [DEFAULT]
 # define own IP address
 my_ip = $controller
@@ -828,6 +827,7 @@ source keystonerc && openstack volume service list
 
 storage_node (){
 printf "=====================Install and configure Cinder (Storage Node) use LVM ================\n"
+# storage node
 sleep 2
 
 ssh root@$storage "yum -y install centos-release-openstack-queens epel-release"
@@ -963,6 +963,7 @@ systemctl restart httpd
 
 vxlan_all(){
 printf "======================================config vxlan======================================\n"
+
 all_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
 sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" $all_ml2_ini
 sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" $all_ml2_ini
@@ -978,6 +979,8 @@ sed -i "s/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_population = True\nprevent
 sed -i "s/\#local_ip = <None>/local_ip = $controller/g" $all_openvswitch_ini
 sed -i "s/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g" $all_openvswitch_ini
 
+printf "======================================restart service=====================================\n"
+sleep 2
 systemctl restart neutron-server
 for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
 systemctl restart neutron-$service
