@@ -507,6 +507,9 @@ systemctl restart openstack-nova-api
 systemctl restart openstack-nova-compute
 source keystonerc && openstack network agent list
 
+source keystonerc &&openstack security group rule create --protocol icmp --ingress default
+source keystonerc &&openstack security group rule create --protocol tcp --dst-port 22:22 default
+
 }
 
 neutron_server_control(){
@@ -837,7 +840,7 @@ ssh root@$storage "yum --enablerepo=centos-openstack-queens,epel -y install open
 cinder="/root/openstack/storage/cinder.conf"
 sed -i "s/storage/$storage/g" $cinder
 sed -i "s/pass_rabbitmq/$pass_rabbitmq/g" $cinder
-sed -i "s/ip_controller/$controller/g" $cinder
+sed -i "s/controller/$controller/g" $cinder
 sed -i "s/pass_project_user/$pass_project_user/g" $cinder
 
 scp /root/openstack/storage/cinder.conf root@$storage:/etc/cinder/
@@ -882,13 +885,13 @@ EOF"
 printf "=============================create group and volume data=============================\n"
 sleep 2
 ssh root@$storage "pvcreate "$dev"1"
-ssh root@$storage "vgcreate vg-data "$dev"1"
+ssh root@$storage "vgcreate -s 32M vg-data "$dev"1"
 
-size=$(ssh root@$storage "fdisk -l | grep sdb | cut -f 3 -d ' ' | cut -f 1 -d '.'")
-
-lvm=$(expr $size - 2)
-
-ssh root@$storage "lvcreate -L " $lvm"G -n lv-data vg-data"
+#size=$(ssh root@$storage "fdisk -l | grep sdb | cut -f 3 -d ' ' | cut -f 1 -d '.'")
+#
+#lvm=$(expr $size - 2)
+#
+#ssh root@$storage "lvcreate -L " $lvm"G -n lv-data vg-data"
 
 
 cinder_lvm="/root/openstack/storage/cinder.conf"
@@ -913,6 +916,8 @@ END
 
 scp /root/openstack/storage/cinder.conf root@$storage:/etc/cinder/
 
+echo "export OS_VOLUME_API_VERSION=2" >> /root/keystonerc
+
 printf "=================================restart cinder-volume service=============================\n"
 sleep 2
 ssh root@$storage "systemctl restart openstack-cinder-volume "
@@ -926,7 +931,7 @@ cat >> "/root/openstack/compute/nova.conf" << END
 
 
 [cinder]
-os_region_name = RegionOneEND
+os_region_name = RegionOne
 
 
 END
