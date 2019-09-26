@@ -2,8 +2,8 @@
 
 controller='192.168.1.198'
 compute='192.168.1.81'
-network='192.168.1.74'
-storage='192.168.100.13'
+storage='192.168.1.74'
+network='192.168.100.13'
 
 pass_project_user="123456"
 pass_rabbitmq="123456"
@@ -17,24 +17,8 @@ ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
 
 systemctl stop firewalld && systemctl disable firewalld
 systemctl stop NetworkManager && systemctl disable NetworkManager
-
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-
-printf "======================================transfer key ssh====================================\n"
-sleep 2
-
-ssh-copy-id -i /root/.ssh/id_rsa.pub root@$compute
-ssh root@$compute "systemctl stop firewalld && systemctl disable firewalld"
-ssh root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
-ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
-ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
-
-ssh-copy-id -i /root/.ssh/id_rsa.pub root@$network
-ssh root@$compute "systemctl stop firewalld && systemctl disable firewalld"
-ssh root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
-ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
-ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
 
 requirements(){
@@ -375,6 +359,8 @@ novncproxy_base_url = http://$controller:6080/vnc_auto.html
 
 END
 
+printf "============================restart and enable nova-compute=====================================\n "
+sleep 2
 systemctl start openstack-nova-compute
 systemctl enable openstack-nova-compute
 
@@ -385,7 +371,7 @@ openstack compute service list
 neutron_Keystone(){
 printf "======================================neutron_Keystone======================================\n"
 sleep 2
-##############Configure Neutron#1
+
 source keystonerc && openstack user create --domain default --project service --password $pass_project_user neutron
 source keystonerc && openstack role add --project service --user neutron admin
 source keystonerc && openstack service create --name neutron --description "OpenStack Networking service" network
@@ -456,7 +442,7 @@ END
 chmod 640 /etc/neutron/neutron.conf
 chgrp neutron /etc/neutron/neutron.conf
 
-l3_ini='/etc/neutron/l3_agent.ini'
+    l3_ini='/etc/neutron/l3_agent.ini'
 sed -i "s/\#interface_driver = <None>/interface_driver = openvswitch/g" $l3_ini
 
 dhcp_ini='/etc/neutron/dhcp_agent.ini'
@@ -506,21 +492,25 @@ ovs-vsctl add-br br-int
 ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini
 su -s /bin/bash neutron -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"
 
+printf "================================restart neutron service================================\n "
+
 for service in server dhcp-agent l3-agent metadata-agent openvswitch-agent; do
 systemctl start neutron-$service
 systemctl enable neutron-$service
 done
 
-
-systemctl restart neutron-server neutron-metadata-agent
-systemctl enable neutron-server neutron-metadata-agent
-systemctl restart openstack-nova-api openstack-nova-compute
+printf "================================restart nova service================================"
+sleep 2
+#systemctl restart neutron-server neutron-metadata-agent
+#systemctl enable neutron-server neutron-metadata-agent
+systemctl restart openstack-nova-api
+systemctl restart openstack-nova-compute
 source keystonerc && openstack network agent list
 
 }
 
 neutron_server_control(){
-printf "======================================Install neutron server==================================\n"
+printf "=================================Install neutron server controller=======================\n"
 sleep 2
 
 yum -y install centos-release-openstack-queens epel-release
@@ -777,15 +767,14 @@ mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'localhos
 mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'%' identified by '"$pass_project_user"';"
 mysql -uroot -p$rootsql -e "flush privileges;"
 
-printf "===============================Install Cinder Service==============================="
+printf "===============================Install Cinder Service ==============================="
+#controller
 sleep 2
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-cinder
 
 
 cat > "/etc/cinder/cinder.conf" << END
-
-
-    # create new
+# create new
 [DEFAULT]
 # define own IP address
 my_ip = $controller
@@ -838,6 +827,7 @@ source keystonerc && openstack volume service list
 
 storage_node (){
 printf "=====================Install and configure Cinder (Storage Node) use LVM ================\n"
+# storage node
 sleep 2
 
 ssh root@$storage "yum -y install centos-release-openstack-queens epel-release"
@@ -973,6 +963,7 @@ systemctl restart httpd
 
 vxlan_all(){
 printf "======================================config vxlan======================================\n"
+
 all_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
 sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" $all_ml2_ini
 sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" $all_ml2_ini
@@ -988,6 +979,8 @@ sed -i "s/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_population = True\nprevent
 sed -i "s/\#local_ip = <None>/local_ip = $controller/g" $all_openvswitch_ini
 sed -i "s/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g" $all_openvswitch_ini
 
+printf "======================================restart service=====================================\n"
+sleep 2
 systemctl restart neutron-server
 for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
 systemctl restart neutron-$service
@@ -1068,7 +1061,7 @@ source /root/keystonerc && openstack keypair create --public-key /root/.ssh/id_r
 
 }
 
-options=("1 (NODE ALL IN ONE)" "2 NODE (CONTROLLER-COMPUTE)" "3 NODE (CONTROLLER-NETWORK-COMPUTE)" "3 NODE (-COMPUTE-STORAGE(LVM-BackEnds))" "3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
+options=("1 (NODE ALL IN ONE)" "2 NODE (CONTROLLER-COMPUTE)" "3 NODE (CONTROLLER-NETWORK-COMPUTE)" "3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
 
 printf "==============================================================================================\n"
 printf "                                  Menu\n"
@@ -1102,6 +1095,16 @@ END
 	         printf "\nLink dashboard http//$controller/dashboard user: admin password: $pass_admin\n"
 	         reboot;;
 	    2 )
+
+            printf "======================================transfer key ssh====================================\n"
+            sleep 2
+
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$compute
+            ssh root@$compute "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
 	        requirements
 	        keytone
 	        glance
@@ -1115,6 +1118,7 @@ END
 	        vxlan_all
             vxlan_com
             key_private
+
             cat >"info" << END
 ip controller: $controller
 ip compute: $compute
@@ -1132,6 +1136,21 @@ END
 	         printf "\nLink dashboard http//$controller/dashboard user: admin password: $pass_admin\n"
 	         reboot;;
 	    3 )
+	        printf "======================================transfer key ssh====================================\n"
+            sleep 2
+
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$compute
+            ssh root@$compute "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$network
+            ssh root@$network "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$network "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$network "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$network "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
 	        requirements
             keytone
             glance
@@ -1147,6 +1166,7 @@ END
             vxlan_net
             vxlan_com
             key_private
+
             cat >"info" << END
 ip controller: $controller
 ip network: $network
@@ -1167,6 +1187,22 @@ END
 		    # End Menu
 
 		4 )
+
+            printf "======================================transfer key ssh====================================\n"
+            sleep 2
+
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$compute
+            ssh root@$compute "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$storage
+            ssh root@$storage "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$storage "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$storage "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$storage "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
 		    requirements
 	        keytone
 	        glance
@@ -1182,6 +1218,8 @@ END
 	        vxlan_all
             vxlan_com
             key_private
+
+
             cat >"info" << END
 ip config: $controller
 ip compute: $compute
@@ -1209,48 +1247,6 @@ END
     esac
 
 done
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
