@@ -971,8 +971,10 @@ sed -i "s/\#flat_networks = \*/flat_networks = physnet1/g" $all_ml2_ini
 sed -i "s/\[ml2_type_vxlan]/\[ml2_type_vxlan]\n\#ranges =/g" $all_ml2_ini
 sed -i "s/\#ranges =/\nvni_ranges = 1:1000/" $all_ml2_ini
 
-ovs-vsctl add-br br-ens37
-ovs-vsctl add-port br-ens37 ens37
+inf=$(ls /sys/class/net/ | awk "{ if (NR == 3) print \$0}")
+echo $inf
+ovs-vsctl add-br br-$inf
+ovs-vsctl add-port br-$inf $inf
 
 all_openvswitch_ini='/etc/neutron/plugins/ml2/openvswitch_agent.ini'
 sed -i "s/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_population = True\nprevent_arp_spoofing = True/g" $all_openvswitch_ini
@@ -1008,8 +1010,12 @@ systemctl restart neutron-server
 
 vxlan_net(){
 printf "======================================config vxlan network================================\n"
-ssh root@$network "ovs-vsctl add-br br-ens37"
-ssh root@$network "ovs-vsctl add-port br-ens37 ens37"
+
+inf=$(ssh root@$network "ls /sys/class/net/ | awk '{ if (NR == 3) print \$0}'")
+echo $inf
+ssh root@$network "ovs-vsctl add-br br-$inf"
+ssh root@$network "ovs-vsctl add-port br-$inf $inf"
+
 
 ssh root@$network "sed -i 's/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g' /etc/neutron/plugins/ml2/ml2_conf.ini"
 ssh root@$network "sed -i 's/\#flat_networks = \*/flat_networks = physnet1/g' /etc/neutron/plugins/ml2/ml2_conf.ini"
@@ -1061,7 +1067,7 @@ source /root/keystonerc && openstack keypair create --public-key /root/.ssh/id_r
 
 }
 
-options=("1 (NODE ALL IN ONE)" "2 NODE (CONTROLLER-COMPUTE)" "3 NODE (CONTROLLER-NETWORK-COMPUTE)" "3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
+options=("INSTALLL 1 NODE)" "INSTALL 2 NODE (CONTROLLER-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-NETWORK-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
 
 printf "==============================================================================================\n"
 printf "                                  Menu\n"
