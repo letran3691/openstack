@@ -821,7 +821,7 @@ systemctl start openstack-cinder-api openstack-cinder-scheduler
 systemctl enable openstack-cinder-api openstack-cinder-scheduler
 
 printf "======================================show status volume=================================\n"
-sleep 2
+sleep 7
 source keystonerc && openstack volume service list
 
 
@@ -841,6 +841,7 @@ cinder="/root/openstack/storage/cinder.conf"
 sed -i "s/storage/$storage/g" $cinder
 sed -i "s/pass_rabbitmq/$pass_rabbitmq/g" $cinder
 sed -i "s/controller/$controller/g" $cinder
+sed -i "s/pass_user_sql/$pass_user_sql/g" $cinder
 sed -i "s/pass_project_user/$pass_project_user/g" $cinder
 
 scp /root/openstack/storage/cinder.conf root@$storage:/etc/cinder/
@@ -940,7 +941,9 @@ scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 
 printf "=====================================openstack-nova-compute===================================\n"
 sleep 2
-ssh root@$compute " systemctl restart openstack-nova-compute "
+ssh root@$compute "systemctl restart openstack-nova-compute "
+
+ssh root@$storage "reboot"
 
 }
 
