@@ -1,15 +1,5 @@
 #!/usr/bin/bash
 
-controller='192.168.1.198'
-compute='192.168.1.81'
-storage='192.168.1.74'
-network='192.168.100.13'
-
-pass_project_user="123456"
-pass_rabbitmq="123456"
-pass_user_sql="123456"
-rootsql="123456"
-pass_admin="123456"
 
 printf "======================================Create key ssh======================================\n"
 sleep 2
@@ -670,9 +660,9 @@ ssh root@$compute "systemctl start libvirtd && systemctl enable libvirtd"
 ssh root@$compute "yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova-compute"
 
 com_nova='/root/openstack/compute/nova.conf'
-sed -i "s/ip_compute/$compute/g" $com_nova
+sed -i "s/compute/$compute/g" $com_nova
 sed -i "s/pass_rabbitmq/$pass_rabbitmq/g" $com_nova
-sed -i "s/ip_controller/$controller/g" $com_nova
+sed -i "s/controller/$controller/g" $com_nova
 sed -i "s/pass_project_user/$pass_project_user/g" $com_nova
 
 scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
@@ -693,7 +683,7 @@ sleep 2
 ssh root@$compute "yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch"
 
 com_neutron='/root/openstack/compute/neutron.conf'
-sed -i "s/ip_controller/$controller/g" $com_neutron
+sed -i "s/controller/$controller/g" $com_neutron
 sed -i "s/pass_rabbitmq/$pass_rabbitmq/g" $com_neutron
 sed -i "s/pass_project_user/$pass_project_user/g" $com_neutron
 
@@ -766,8 +756,8 @@ source keystonerc && openstack endpoint create --region RegionOne volumev3 inter
 source keystonerc && openstack endpoint create --region RegionOne volumev3 admin http://$controller:8776/v3/%\(tenant_id\)s
 
 mysql -uroot -p$rootsql -e "create database cinder;"
-mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'localhost' identified by '"$pass_project_user"';"
-mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'%' identified by '"$pass_project_user"';"
+mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'localhost' identified by '"$pass_user_sql"';"
+mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'%' identified by '"$pass_user_sql"';"
 mysql -uroot -p$rootsql -e "flush privileges;"
 
 printf "===============================Install Cinder Service ==============================="
@@ -1086,6 +1076,26 @@ select opt in "${options[@]}" "THOAT"; do
 
     case "$REPLY" in
 	    1 )
+	        echo "Enter IP Controller node: "
+            read controller
+
+            echo "Enter password admin: "
+            read pass_admin
+
+            userabbitmq='openstack'
+            echo "Enter passwork rabbitmq:"
+            read pass_rabbitmq
+
+            echo "Enter password root sql:"
+            read rootsql
+
+            echo "Enter password user sql:"
+            read pass_user_sql
+
+            echo "Enter password user service:"
+            read pass_project_user
+
+
 	        requirements
 	        keytone
 	        glance
@@ -1098,17 +1108,43 @@ select opt in "${options[@]}" "THOAT"; do
 	        vxlan_all
 	        key_private
 	        cat >"info" << END
-ip config: $controller
+ip controller: $controller
 user: admin
 pass admin: $pass_admin
+pass root sql: $rootsql
 pass user sql: $pass_user_sql
-pass service keytone: $pass_project_user
+pass user service: $pass_project_user
 user RabbitMQ: openstack
 pass RabbitMQ: $pass_rabbitmq
+Link dashboard http//$controller/dashboard
+domain: default
+user: admin
+password: $pass_admin
 END
-	         printf "\nLink dashboard http//$controller/dashboard user: admin password: $pass_admin\n"
+	         printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
 	         reboot;;
 	    2 )
+            echo "Enter IP Controller node: "
+            read controller
+
+             echo "Enter IP Compute node: "
+            read compute
+
+            echo "Enter password admin: "
+            read pass_admin
+
+            userabbitmq='openstack'
+            echo "Enter passwork rabbitmq:"
+            read pass_rabbitmq
+
+            echo "Enter password root sql:"
+            read rootsql
+
+            echo "Enter password user sql:"
+            read pass_user_sql
+
+            echo "Enter password user service:"
+            read pass_project_user
 
             printf "======================================transfer key ssh====================================\n"
             sleep 2
@@ -1138,8 +1174,9 @@ ip controller: $controller
 ip compute: $compute
 user: admin
 pass admin: $pass_admin
+pass root sql: $rootsql
 pass user sql: $pass_user_sql
-pass service keytone: $pass_project_user
+pass user service: $pass_project_user
 user RabbitMQ: openstack
 pass RabbitMQ: $pass_rabbitmq
 Link dashboard http//$controller/dashboard
@@ -1147,9 +1184,34 @@ domain: default
 user: admin
 password: $pass_admin
 END
-	         printf "\nLink dashboard http//$controller/dashboard user: admin password: $pass_admin\n"
+	         printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
 	         reboot;;
 	    3 )
+            echo "Enter IP Controller node: "
+            read controller
+
+            echo "Enter IP Network node: "
+            read network
+
+            echo "Enter IP Compute node: "
+            read compute
+
+            echo "Enter password admin: "
+            read pass_admin
+
+            userabbitmq='openstack'
+            echo "Enter passwork rabbitmq:"
+            read pass_rabbitmq
+
+            echo "Enter password root sql:"
+            read rootsql
+
+            echo "Enter password user sql:"
+            read pass_user_sql
+
+            echo "Enter password user service:"
+            read pass_project_user
+
 	        printf "======================================transfer key ssh====================================\n"
             sleep 2
 
@@ -1187,8 +1249,9 @@ ip network: $network
 ip compute: $compute
 user: admin
 pass admin: $pass_admin
+pass root sql: $rootsql
 pass user sql: $pass_user_sql
-pass service keytone: $pass_project_user
+pass user service : $pass_project_user
 user RabbitMQ: openstack
 pass RabbitMQ: $pass_rabbitmq
 Link dashboard http//$controller/dashboard
@@ -1196,11 +1259,35 @@ domain: default
 user: admin
 password: $pass_admin
 END
-             printf "\nLink dashboard http//$controller/dashboard user: admin password: $pass_admin\n"
+             printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
              reboot;;
 		    # End Menu
 
 		4 )
+            echo "Enter IP Controller node: "
+            read controller
+
+            echo "Enter IP Network node: "
+            read storage
+
+            echo "Enter IP Compute node: "
+            read compute
+
+            echo "Enter password admin: "
+            read pass_admin
+
+            userabbitmq='openstack'
+            echo "Enter passwork rabbitmq:"
+            read pass_rabbitmq
+
+            echo "Enter password root sql:"
+            read rootsql
+
+            echo "Enter password user sql:"
+            read pass_user_sql
+
+            echo "Enter password user service:"
+            read pass_project_user
 
             printf "======================================transfer key ssh====================================\n"
             sleep 2
@@ -1240,6 +1327,7 @@ ip compute: $compute
 ip storage: $storage
 user: admin
 pass admin: $pass_admin
+pass root sql: $rootsql
 pass user sql: $pass_user_sql
 pass service keytone: $pass_project_user
 user RabbitMQ: openstack
@@ -1249,12 +1337,12 @@ domain: default
 user: admin
 password: $pass_admin
 END
-            printf "\nLink dashboard http//$controller/dashboard user: admin password: $pass_admin\n"
+            printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
             reboot;;
         5 ) exit;;
         6 ) exit;;
 
-	    $(( ${#options[@]}+1 )) ) printf "\nChao tam biet!\nLink dashboard http//$controller/dashboard user: admin password: $pass_admin\n\n" ; break;;
+	    $(( ${#options[@]}+1 )) ) printf "\nChao tam biet!\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n\n" ; break;;
 	    *) echo "Ban nhap sai, vui long nhap theo so thu tu tren danh sach";continue;;
 
 
