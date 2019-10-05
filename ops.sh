@@ -1,6 +1,5 @@
 #!/usr/bin/bash
 
-
 printf "======================================Create key ssh======================================\n"
 sleep 2
 ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
@@ -9,7 +8,6 @@ systemctl stop firewalld && systemctl disable firewalld
 systemctl stop NetworkManager && systemctl disable NetworkManager
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-
 
 requirements(){
 printf "======================================install packet requirements=============================\n"
@@ -192,7 +190,6 @@ chown root:glance /etc/glance/glance-api.conf /etc/glance/glance-registry.conf
 su -s /bin/bash glance -c "glance-manage db_sync"
 systemctl start openstack-glance-api openstack-glance-registry
 systemctl enable openstack-glance-api openstack-glance-registry
-
 }
 nova_Keystone (){
 printf "======================================nova_service keytone==============================================\n"
@@ -227,7 +224,6 @@ mysql -u root -p123456 -e "create database nova_cell0;"
 mysql -u root -p123456 -e "grant all privileges on nova_cell0.* to nova@'localhost' identified by '"$pass_user_sql"';"
 mysql -u root -p123456 -e "grant all privileges on nova_cell0.* to nova@'%' identified by '"$pass_user_sql"';"
 mysql -u root -p123456 -e "flush privileges;"
-
 }
 
 nova_install_conf(){
@@ -322,14 +318,12 @@ systemctl enable openstack-nova-$service
 done
 
 openstack compute service list
-
 }
 ############################################# nova ALL IN ONE################################################
 nova_compute(){
 
 printf "======================================Install libvirt and nova-compute===========================\n"
 sleep 2
-
 
 yum -y install qemu-kvm libvirt virt-install
 systemctl start libvirtd
@@ -373,7 +367,6 @@ mysql -u root -p123456 -e "create database neutron_ml2;"
 mysql -u root -p123456 -e "grant all privileges on neutron_ml2.* to neutron@'localhost' identified by '"$pass_user_sql"';"
 mysql -u root -p123456 -e "grant all privileges on neutron_ml2.* to neutron@'%' identified by '"$pass_user_sql"';"
 mysql -u root -p123456 -e "flush privileges;"
-
 }
 ############################################## neutron ALL IN ONE ######################################
 neutron_server_all(){
@@ -499,7 +492,6 @@ source keystonerc && openstack network agent list
 
 #source keystonerc &&openstack security group rule create --protocol icmp --ingress default
 #source keystonerc &&openstack security group rule create --protocol tcp --dst-port 22:22 default
-
 }
 
 neutron_server_control(){
@@ -590,14 +582,12 @@ metadata_proxy_shared_secret = metadata_secret
 
 END
 
-
 ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini
 su -s /bin/bash neutron -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"
 printf "======================================restart service=======================================\n"
 systemctl restart neutron-server neutron-metadata-agent
 systemctl enable neutron-server neutron-metadata-agent
 systemctl restart openstack-nova-api openstack-nova-compute
-
 }
 
 
@@ -645,7 +635,6 @@ systemctl enable neutron-\$service
 done"
 
 printf "======================================install and config netron service done===================\n"
-
 }
 
 compute_node(){
@@ -735,7 +724,6 @@ ssh root@$compute "systemctl restart openstack-nova-compute && systemctl enable 
 ssh root@$compute "systemctl start neutron-openvswitch-agent && systemctl enable neutron-openvswitch-agent"
 
 printf "===============================Install libvirt and nova-compute node done=====================\n"
-
 }
 
 cinder_controller (){
@@ -764,7 +752,6 @@ printf "===============================Install Cinder Service ==================
 #controller
 sleep 2
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-cinder
-
 
 cat > "/etc/cinder/cinder.conf" << END
 # create new
@@ -813,8 +800,6 @@ systemctl enable openstack-cinder-api openstack-cinder-scheduler
 printf "======================================show status volume=================================\n"
 sleep 7
 source keystonerc && openstack volume service list
-
-
 }
 
 
@@ -861,7 +846,6 @@ w
 
 EOF"
 
-
 printf "=============================convert partion to lvm=============================\n"
 sleep 2
 
@@ -884,7 +868,6 @@ ssh root@$storage "vgcreate -s 32M vg-data "$dev"1"
 #
 #ssh root@$storage "lvcreate -L " $lvm"G -n lv-data vg-data"
 
-
 cinder_lvm="/root/openstack/storage/cinder.conf"
 sed -i "s/#lvm/enabled_backends = lvm/g" $cinder_lvm
 
@@ -904,7 +887,6 @@ iscsi_protocol = iscsi
 
 END
 
-
 scp /root/openstack/storage/cinder.conf root@$storage:/etc/cinder/
 
 echo "export OS_VOLUME_API_VERSION=2" >> /root/keystonerc
@@ -912,8 +894,6 @@ echo "export OS_VOLUME_API_VERSION=2" >> /root/keystonerc
 printf "=================================restart cinder-volume service=============================\n"
 sleep 2
 ssh root@$storage "systemctl restart openstack-cinder-volume "
-
-
 
 #####cinder compute node
 
@@ -934,12 +914,10 @@ sleep 2
 ssh root@$compute "systemctl restart openstack-nova-compute "
 
 ssh root@$storage "reboot"
-
 }
 
 
 horizon_install(){
-
 printf "======================================horizon_install======================================\n"
 sleep 2
 
@@ -956,7 +934,6 @@ sed -i "s/WSGISocketPrefix run\/wsgi/WSGISocketPrefix run\/wsgi\nWSGIApplication
 
 printf "======================================Restart httpd======================================\n"
 systemctl restart httpd
-
 }
 
 vxlan_all(){
@@ -998,7 +975,6 @@ sleep 2
 source keystonerc && openstack security group rule list
 
 printf "======================================config VXLAN done=================================\n"
-
 }
 
 vxlan_con(){
@@ -1010,7 +986,6 @@ sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" $con_ml
 sed -i "s/\[ml2_type_vxlan]/\[ml2_type_vxlan]\n\#ranges =/g" $con_ml2_ini
 sed -i "s/\#ranges =/\nvni_ranges = 1:1000/" $con_ml2_ini
 
-
 systemctl restart neutron-server
 
 printf "============================security group and permit icmp, ssh=============================\n"
@@ -1019,13 +994,10 @@ source keystonerc && openstack security group create secgroup01
 source keystonerc && openstack security group rule create --protocol icmp --ingress secgroup01
 source keystonerc && openstack security group rule create --protocol tcp --dst-port 22:22 secgroup01
 
-printf "============================list rule=============================\n"
+printf "============================list security group==========================================\n"
 sleep 2
 source keystonerc && openstack security group rule list
-
-
  printf "==================================config VXLAN on controller done=======================\n"
-
 }
 
 vxlan_net(){
@@ -1052,7 +1024,6 @@ ssh root@$network "systemctl restart neutron-openvswitch-agent"
 printf "============================config VXLAN on Network done and reboot==========================\n"
 
 ssh root@$network "reboot"
-
 }
 
 vxlan_com(){
@@ -1074,10 +1045,7 @@ ssh root@$compute "systemctl restart neutron-openvswitch-agent"
 printf "=================================config VXLAN on Computer done and reboot=====================\n"
 
 ssh root@$compute "reboot"
-
 }
-
-
 
 key_private(){
 
@@ -1085,7 +1053,6 @@ printf "======================================key_private=======================
 sleep 2
 
 source /root/keystonerc && openstack keypair create --public-key /root/.ssh/id_rsa.pub mykey
-
 }
 
 options=("INSTALLL 1 NODE)" "INSTALL 2 NODE (CONTROLLER-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-NETWORK-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
