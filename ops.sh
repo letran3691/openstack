@@ -497,8 +497,8 @@ systemctl restart openstack-nova-api
 systemctl restart openstack-nova-compute
 source keystonerc && openstack network agent list
 
-source keystonerc &&openstack security group rule create --protocol icmp --ingress default
-source keystonerc &&openstack security group rule create --protocol tcp --dst-port 22:22 default
+#source keystonerc &&openstack security group rule create --protocol icmp --ingress default
+#source keystonerc &&openstack security group rule create --protocol tcp --dst-port 22:22 default
 
 }
 
@@ -987,6 +987,16 @@ systemctl restart neutron-$service
 done
 systemctl restart neutron-openvswitch-agent
 
+printf "============================security group and permit icmp, ssh=============================\n"
+sleep 2
+source keystonerc && openstack security group create secgroup01
+source keystonerc && openstack security group rule create --protocol icmp --ingress secgroup01
+source keystonerc && openstack security group rule create --protocol tcp --dst-port 22:22 secgroup01
+
+printf "============================list rule=============================\n"
+sleep 2
+source keystonerc && openstack security group rule list
+
 printf "======================================config VXLAN done=================================\n"
 
 }
@@ -1000,7 +1010,19 @@ sed -i "s/\#tenant_network_types = local/tenant_network_types = vxlan/g" $con_ml
 sed -i "s/\[ml2_type_vxlan]/\[ml2_type_vxlan]\n\#ranges =/g" $con_ml2_ini
 sed -i "s/\#ranges =/\nvni_ranges = 1:1000/" $con_ml2_ini
 
+
 systemctl restart neutron-server
+
+printf "============================security group and permit icmp, ssh=============================\n"
+sleep 2
+source keystonerc && openstack security group create secgroup01
+source keystonerc && openstack security group rule create --protocol icmp --ingress secgroup01
+source keystonerc && openstack security group rule create --protocol tcp --dst-port 22:22 secgroup01
+
+printf "============================list rule=============================\n"
+sleep 2
+source keystonerc && openstack security group rule list
+
 
  printf "==================================config VXLAN on controller done=======================\n"
 
@@ -1053,8 +1075,9 @@ printf "=================================config VXLAN on Computer done and reboo
 
 ssh root@$compute "reboot"
 
-
 }
+
+
 
 key_private(){
 
@@ -1072,7 +1095,7 @@ printf "                                  Menu\n"
 printf "===============================================================================================\n"
 PS3="
 $prompt"
-select opt in "${options[@]}" "THOAT"; do
+select opt in "${options[@]}" "EXIT"; do
 
     case "$REPLY" in
 	    1 )
@@ -1094,7 +1117,6 @@ select opt in "${options[@]}" "THOAT"; do
 
             echo "Enter password user service:"
             read pass_project_user
-
 
 	        requirements
 	        keytone
@@ -1267,7 +1289,7 @@ END
             echo "Enter IP Controller node: "
             read controller
 
-            echo "Enter IP Network node: "
+            echo "Enter IP Storage node: "
             read storage
 
             echo "Enter IP Compute node: "
@@ -1320,7 +1342,6 @@ END
             vxlan_com
             key_private
 
-
             cat >"info" << END
 ip config: $controller
 ip compute: $compute
@@ -1339,11 +1360,13 @@ password: $pass_admin
 END
             printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
             reboot;;
-        5 ) exit;;
-        6 ) exit;;
+        5 ) printf "Updating\nPlease try again later\nTHANKS!!! "
+            exit;;
+        6 ) printf "Updating\nPlease try again later\nTHANKS!!! "
+            exit;;
 
-	    $(( ${#options[@]}+1 )) ) printf "\nChao tam biet!\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n\n" ; break;;
-	    *) echo "Ban nhap sai, vui long nhap theo so thu tu tren danh sach";continue;;
+	    $(( ${#options[@]}+1 )) ) printf "\nInstall and config done!!!\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n\n" ; break;;
+	    *) echo "Your option wrong, Please choose again!!!";continue;;
 
 
     esac
