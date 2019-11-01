@@ -372,7 +372,7 @@ mysql -u root -p123456 -e "flush privileges;"
 neutron_server_all(){
 printf "======================================Install neutron server======================================\n"
 sleep 2
-yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch
+yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch libibverbs-devel
 
 #vi /etc/neutron/neutron.conf
 cat > "/etc/neutron/neutron.conf" << END
@@ -487,11 +487,8 @@ sleep 2
 #systemctl restart neutron-server neutron-metadata-agent
 #systemctl enable neutron-server neutron-metadata-agent
 systemctl restart openstack-nova-api
-systemctl restart openstack-nova-compute
+#systemctl restart openstack-nova-compute
 source keystonerc && openstack network agent list
-
-#source keystonerc &&openstack security group rule create --protocol icmp --ingress default
-#source keystonerc &&openstack security group rule create --protocol tcp --dst-port 22:22 default
 }
 
 neutron_server_control(){
@@ -597,7 +594,7 @@ printf "==================install and config netron service on NETWORK NODE=====
 sleep 2
 ssh root@$network "yum -y install centos-release-openstack-queens epel-release"
 ssh root@$network "sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo"
-ssh root@$network "yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch"
+ssh root@$network "yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch libibverbs-devel"
 
 net_neutron="/root/openstack/network/neutron.conf"
 sed -i "s/controller/$controller/g" $net_neutron
@@ -649,7 +646,7 @@ ssh root@$compute "systemctl start libvirtd && systemctl enable libvirtd"
 ssh root@$compute "yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova-compute"
 
 com_nova='/root/openstack/compute/nova.conf'
-sed -i "s/compute/$compute/g" $com_nova
+sed -i "s/computer/$compute/g" $com_nova
 sed -i "s/pass_rabbitmq/$pass_rabbitmq/g" $com_nova
 sed -i "s/controller/$controller/g" $com_nova
 sed -i "s/pass_project_user/$pass_project_user/g" $com_nova
@@ -662,7 +659,7 @@ ssh root@$compute "chgrp nova /etc/nova/nova.conf"
 printf "======================restart openstack-nova-compute and discovery host======================\n "
 
 ssh root@$compute "systemctl restart openstack-nova-compute"
-ssh root@$compute "systemctl restart openstack-nova-compute"
+ssh root@$compute "systemctl enable openstack-nova-compute"
 
 su -s /bin/bash nova -c "nova-manage cell_v2 discover_hosts"
 source keystonerc && openstack compute service list
@@ -1008,6 +1005,7 @@ echo $inf
 ssh root@$network "ovs-vsctl add-br br-$inf"
 ssh root@$network "ovs-vsctl add-port br-$inf $inf"
 
+printf "======================================edit file================================\n"
 
 ssh root@$network "sed -i 's/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g' /etc/neutron/plugins/ml2/ml2_conf.ini"
 ssh root@$network "sed -i 's/\#flat_networks = \*/flat_networks = physnet1/g' /etc/neutron/plugins/ml2/ml2_conf.ini"
@@ -1019,7 +1017,8 @@ ssh root@$network "sed -i 's/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_populat
 ssh root@$network "sed -i 's/\#local_ip = <None>/local_ip = $network/g' /etc/neutron/plugins/ml2/openvswitch_agent.ini"
 ssh root@$network "sed -i 's/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g' /etc/neutron/plugins/ml2/openvswitch_agent.ini"
 
-ssh root@$network "systemctl restart neutron-openvswitch-agent"
+printf "======================================restart neutron-openvswitch============================\n"
+ssh root@192.168.124.130 "systemctl restart neutron-dhcp-agent && systemctl restart neutron-l3-agent && systemctl restart neutron-metadata-agent && systemctl restart neutron-openvswitch-agent"
 
 printf "============================config VXLAN on Network done and reboot==========================\n"
 
@@ -1055,7 +1054,7 @@ sleep 2
 source /root/keystonerc && openstack keypair create --public-key /root/.ssh/id_rsa.pub mykey
 }
 
-options=("INSTALLL 1 NODE)" "INSTALL 2 NODE (CONTROLLER-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-NETWORK-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
+options=("INSTALLL 1 NODE ALL IN ONE" "INSTALL 2 NODE (CONTROLLER-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-NETWORK-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
 
 printf "==============================================================================================\n"
 printf "                                  Menu\n"
@@ -1110,7 +1109,7 @@ domain: default
 user: admin
 password: $pass_admin
 END
-	         printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
+	         printf "\nLink dashboard http://$controller/dashboard domain: default user: admin password: $pass_admin\n"
 	         reboot;;
 	    2 )
             echo "Enter IP Controller node: "
@@ -1149,7 +1148,6 @@ END
 	        glance
 	        nova_Keystone
 	        nova_install_conf
-	        nova_compute
 	        neutron_Keystone
 	        neutron_server_all
 	        horizon_install
@@ -1173,7 +1171,7 @@ domain: default
 user: admin
 password: $pass_admin
 END
-	         printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
+	         printf "\nLink dashboard http://$controller/dashboard domain: default user: admin password: $pass_admin\n"
 	         reboot;;
 	    3 )
             echo "Enter IP Controller node: "
@@ -1221,7 +1219,6 @@ END
             glance
             nova_Keystone
             nova_install_conf
-            nova_compute
             neutron_Keystone
             neutron_server_control
             network_node
@@ -1248,7 +1245,7 @@ domain: default
 user: admin
 password: $pass_admin
 END
-             printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
+             printf "\nLink dashboard http://$controller/dashboard domain: default user: admin password: $pass_admin\n"
              reboot;;
 		    # End Menu
 
@@ -1298,7 +1295,6 @@ END
 	        glance
 	        nova_Keystone
 	        nova_install_conf
-	        nova_compute
 	        neutron_Keystone
 	        neutron_server_all
 	        horizon_install
@@ -1332,15 +1328,10 @@ END
         6 ) printf "Updating\nPlease try again later\nTHANKS!!! "
             exit;;
 
-	    $(( ${#options[@]}+1 )) ) printf "\nInstall and config done!!!\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n\n" ; break;;
+	    $(( ${#options[@]}+1 )) ) printf "\nInstall and config done!!!\nLink dashboard http://$controller/dashboard domain: default user: admin password: $pass_admin\n\n" ; break;;
 	    *) echo "Your option wrong, Please choose again!!!";continue;;
 
 
     esac
 
 done
-
-
-
-
-
