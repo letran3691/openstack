@@ -78,7 +78,7 @@ export OS_USER_DOMAIN_NAME=default
 export OS_PROJECT_NAME=admin
 export OS_USERNAME=admin
 export OS_PASSWORD=$pass_admin
-export OS_AUTH_URL=http://$controller:5000/v3
+export OS_AUTH_URL=http://$controller:5000/v3/
 export OS_IDENTITY_API_VERSION=3
 export OS_IMAGE_API_VERSION=2
 export PS1='[\u@\h \W(keystone)]\$ '
@@ -135,8 +135,8 @@ connection = mysql+pymysql://glance:$pass_user_sql@$controller/glance
 
 # keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://$controller:5000
-auth_url = http://$controller:5000
+www_authenticate_uri = http://$controller:5000/v3/
+auth_url = http://$controller:5000/v3/
 memcached_servers = $controller:11211
 auth_type = password
 project_domain_name = default
@@ -170,8 +170,8 @@ connection = mysql+pymysql://glance:$pass_user_sql@$controller/glance
 
 # keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://$controller:5000
-auth_url = http://$controller:5000
+www_authenticate_uri = http://$controller:5000/v3/
+auth_url = http://$controller:5000/v3/
 memcached_servers = $controller:11211
 auth_type = password
 project_domain_name = default
@@ -266,8 +266,8 @@ connection = mysql+pymysql://nova:$pass_user_sql@$controller/nova
 
 # Keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://$controller:5000
-auth_url = http://$controller:5000
+www_authenticate_uri = http://$controller:5000/v3/
+auth_url = http://$controller:5000/v3/
 memcached_servers = $controller:11211
 auth_type = password
 project_domain_name = default
@@ -277,7 +277,7 @@ username = nova
 password = $pass_project_user
 
 [placement]
-auth_url = http://$controller:5000
+auth_url = http://$controller:5000/v3/
 os_region_name = RegionOne
 auth_type = password
 project_domain_name = default
@@ -392,8 +392,8 @@ debug = true
 
 # Keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://$controller:5000
-auth_url = http://$controller:5000
+www_authenticate_uri = http://$controller:5000/v3/
+auth_url = http://$controller:5000/v3/
 memcached_servers = $controller:11211
 auth_type = password
 project_domain_name = default
@@ -408,7 +408,7 @@ connection = mysql+pymysql://neutron:$pass_user_sql@$controller/neutron_ml2
 
 # Nova connection info
 [nova]
-auth_url = http://$controller:5000
+auth_url = http://$controller:5000/v3/
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -454,7 +454,7 @@ sed -i "s/\#neutron/use_neutron = True\nlinuxnet_interface_driver = nova.network
 
 cat >> "/etc/nova/nova.conf" << END
 [neutron]
-auth_url = http://$controller:5000
+auth_url = http://$controller:5000/v3/
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -516,8 +516,8 @@ debug = true
 
 # Keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://$controller:5000
-auth_url = http://$controller:5000
+www_authenticate_uri = http://$controller:5000/v3/
+auth_url = http://$controller:5000/v3/
 memcached_servers = $controller:11211
 auth_type = password
 project_domain_name = default
@@ -532,7 +532,7 @@ connection = mysql+pymysql://neutron:$pass_user_sql@$controller/neutron_ml2
 
 # Nova connection info
 [nova]
-auth_url = http://$controller:5000
+auth_url = http://$controller:5000/v3/
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -565,7 +565,7 @@ sed -i "s/\#neutron/use_neutron = True\nlinuxnet_interface_driver = nova.network
 
 cat >> "/etc/nova/nova.conf" << END
 [neutron]
-auth_url = http://$controller:5000
+auth_url = http://$controller:5000/v3/
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -690,7 +690,7 @@ sed -i "s/\#neutron/use_neutron = True\nlinuxnet_interface_driver = nova.network
 
 cat >> "/root/openstack/compute/nova.conf" << END
 [neutron]
-auth_url = http://$controller:5000
+auth_url = http://$controller:5000/v3/
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -768,8 +768,8 @@ connection = mysql+pymysql://cinder:$pass_user_sql@$controller/cinder
 
 # Keystone auth info
 [keystone_authtoken]
-www_authenticate_uri = http://$controller:5000
-auth_url = http://$controller:5000
+www_authenticate_uri = http://$controller:5000/v3/
+auth_url = http://$controller:5000/v3/
 memcached_servers = $controller:11211
 auth_type = password
 project_domain_name = default
