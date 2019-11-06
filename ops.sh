@@ -1,6 +1,21 @@
 #!/usr/bin/bash
 
+
+
+ip=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f1  -d'/')
+netmask=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f2  -d'/')
+
+
+ip_br=$(ip addr | grep 'state UP' -A2 | grep inet | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
+netmask_br=$(ip addr | grep 'state UP' -A2 | grep inet | tail -n1 | awk '{print $2}' | cut -f2  -d'/')
+route_br=$(route -n | head -n4 | tail -n1 | awk '{print $2}')
+
+inf1=$(ls /sys/class/net/ | awk '{ if (NR == 1) print $0}')
+
+inf2=$(ls /sys/class/net/ | awk '{ if (NR == 2) print $0}')
+
 printf "======================================Create key ssh======================================\n"
+
 sleep 2
 ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
 
@@ -970,6 +985,50 @@ source keystonerc && openstack security group rule create --protocol tcp --dst-p
 printf "============================list rule=============================\n"
 sleep 2
 source keystonerc && openstack security group rule list
+
+
+
+############################################################################################################
+
+printf "+++++++++++++++++++++++++++++++set ip static+++++++++++++++++++++++++++++\n"
+
+inf_name="/etc/sysconfig/network-scripts/ifcfg-$inf1"
+
+sed -i "s/BOOTPROTO=\"dhcp\"/BOOTPROTO=\"static\"/g" $inf_name
+
+echo "IPADDR="$ip >> $inf_name
+echo "PREFIX="$netmask >> $inf_name
+
+
+cat >> "/etc/sysconfig/network-scripts/ifcfg-$inf2" << END
+TYPE=Ethernet
+DEVICE="$inf2"
+NAME=$inf2
+ONBOOT=yes
+OVS_BRIDGE=br-$inf2
+TYPE="OVSPort"
+DEVICETYPE="ovs"
+
+
+END
+
+cat >> "/etc/sysconfig/network-scripts/ifcfg-br-$inf2" << END
+DEVICE="br-$inf2"
+BOOTPROTO="static"
+IPADDR=$ip_br
+PREFIX=$netmask_br
+GATEWAY=$route_br
+DNS1=8.8.8.8
+ONBOOT="yes"
+TYPE="OVSBridge"
+DEVICETYPE="ovs"
+
+
+END
+
+
+
+#############################################################################################################
 
 printf "======================================config VXLAN done=================================\n"
 }
