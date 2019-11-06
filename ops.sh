@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 
-
+br_network(){
 ip=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f1  -d'/')
 netmask=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f2  -d'/')
 
@@ -13,6 +13,29 @@ route_br=$(route -n | head -n4 | tail -n1 | awk '{print $2}')
 inf1=$(ls /sys/class/net/ | awk '{ if (NR == 1) print $0}')
 
 inf2=$(ls /sys/class/net/ | awk '{ if (NR == 2) print $0}')
+}
+
+br_network_node(){
+ip=$(ssh root@$network "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f1  -d'/'")
+netmask=$(ssh root@$network "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f2  -d'/'")
+
+
+ip_br=$(ssh root@$network "ip addr | grep 'state UP' -A2 | grep inet | tail -n1 | awk '{print \$2}' | cut -f1  -d'/'")
+netmask_br=$(ssh root@$network "ip addr | grep 'state UP' -A2 | grep inet | tail -n1 | awk '{print \$2}' | cut -f2  -d'/'")
+route_br=$(ssh root@$network "route -n | head -n4 | tail -n1 | awk '{print \$2}'")
+
+inf1=$(ssh root@$network "ls /sys/class/net/ | awk '{ if (NR == 1) print \$0}'")
+
+inf2=$(ssh root@$network "ls /sys/class/net/ | awk '{ if (NR == 2) print \$0}'")
+
+echo "ip:" $ip
+echo "netmask:" $netmask
+echo "ip br:" $ip_br
+echo "netmask br:" $netmask_br
+echo "route br:" $route_br
+echo "inf1:" $inf1
+echo "inf2:" $inf2
+}
 
 printf "======================================Create key ssh======================================\n"
 
@@ -245,6 +268,10 @@ nova_install_conf(){
 printf "======================================Install Nova services========================================\n"
 sleep 2
 
+yum -y install qemu-kvm libvirt virt-install
+systemctl start libvirtd
+systemctl enable libvirtd
+
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-nova
 
 cat > "/etc/nova/nova.conf" << END
@@ -327,7 +354,7 @@ su -s /bin/bash nova -c "nova-manage cell_v2 create_cell --name cell1"
 systemctl restart httpd
 chown nova. /var/log/nova/nova-placement-api.log
 
-for service in api consoleauth conductor scheduler novncproxy; do
+for service in api consoleauth conductor scheduler  novncproxy compute; do
 systemctl start openstack-nova-$service
 systemctl enable openstack-nova-$service
 done
@@ -502,7 +529,7 @@ sleep 2
 #systemctl restart neutron-server neutron-metadata-agent
 #systemctl enable neutron-server neutron-metadata-agent
 systemctl restart openstack-nova-api
-#systemctl restart openstack-nova-compute
+systemctl restart openstack-nova-compute
 source keystonerc && openstack network agent list
 }
 
@@ -615,6 +642,8 @@ net_neutron="/root/openstack/network/neutron.conf"
 sed -i "s/controller/$controller/g" $net_neutron
 sed -i "s/pass_rabbitmq/$pass_rabbitmq/g" $net_neutron
 sed -i "s/pass_project_user/$pass_project_user/g" $net_neutron
+sed -i "s/pass_project_user/$pass_user_sql/g" $net_neutron
+
 
 ssh root@$network "sed -i 's/\#interface_driver = <None>/interface_driver = openvswitch/g' /etc/neutron/l3_agent.ini"
 
@@ -641,7 +670,7 @@ scp /root/openstack/network/neutron.conf root@$network:/etc/neutron/
 ssh root@$network "ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini"
 ssh root@$network "systemctl start openvswitch && systemctl enable openvswitch"
 ssh root@$network "ovs-vsctl add-br br-int"
-ssh root@$network "for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
+ssh root@$network "for service in dhcp-agent l3-agent metadata-agent openvswitch-agent server; do
 systemctl start neutron-\$service
 systemctl enable neutron-\$service
 done"
@@ -968,14 +997,6 @@ sed -i "s/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_population = True\nprevent
 sed -i "s/\#local_ip = <None>/local_ip = $controller/g" $all_openvswitch_ini
 sed -i "s/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g" $all_openvswitch_ini
 
-printf "======================================restart service=====================================\n"
-sleep 2
-systemctl restart neutron-server
-for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
-systemctl restart neutron-$service
-done
-systemctl restart neutron-openvswitch-agent
-
 printf "============================security group and permit icmp, ssh=============================\n"
 sleep 2
 source keystonerc && openstack security group create secgroup01
@@ -1023,12 +1044,17 @@ ONBOOT="yes"
 TYPE="OVSBridge"
 DEVICETYPE="ovs"
 
-
 END
 
-
-
 #############################################################################################################
+
+printf "======================================restart service=====================================\n"
+sleep 2
+systemctl restart neutron-server
+for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
+systemctl restart neutron-$service
+done
+systemctl restart neutron-openvswitch-agent
 
 printf "======================================config VXLAN done=================================\n"
 }
@@ -1053,18 +1079,16 @@ source keystonerc && openstack security group rule create --protocol tcp --dst-p
 printf "============================list security group==========================================\n"
 sleep 2
 source keystonerc && openstack security group rule list
- printf "==================================config VXLAN on controller done=======================\n"
+ printf "==================================Config VXLAN on controller done=======================\n"
 }
 
 vxlan_net(){
-printf "======================================config vxlan network================================\n"
+printf "======================================Begin config vxlan network================================\n"
 
 inf=$(ssh root@$network "ls /sys/class/net/ | awk '{ if (NR == 3) print \$0}'")
 echo $inf
 ssh root@$network "ovs-vsctl add-br br-$inf"
 ssh root@$network "ovs-vsctl add-port br-$inf $inf"
-
-printf "======================================edit file================================\n"
 
 ssh root@$network "sed -i 's/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g' /etc/neutron/plugins/ml2/ml2_conf.ini"
 ssh root@$network "sed -i 's/\#flat_networks = \*/flat_networks = physnet1/g' /etc/neutron/plugins/ml2/ml2_conf.ini"
@@ -1076,8 +1100,43 @@ ssh root@$network "sed -i 's/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_populat
 ssh root@$network "sed -i 's/\#local_ip = <None>/local_ip = $network/g' /etc/neutron/plugins/ml2/openvswitch_agent.ini"
 ssh root@$network "sed -i 's/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g' /etc/neutron/plugins/ml2/openvswitch_agent.ini"
 
+
+printf "+++++++++++++++++++++++++++++++set ip static+++++++++++++++++++++++++++++\n"
+
+#inf_name=$(ssh root@$network "/etc/sysconfig/network-scripts/ifcfg-$inf1")
+
+ssh root@$network "sed -i 's/BOOTPROTO=\"dhcp\"/BOOTPROTO=\"static\"/g' /etc/sysconfig/network-scripts/ifcfg-$inf1"
+
+ssh root@$network "echo 'IPADDR='$ip >> /etc/sysconfig/network-scripts/ifcfg-$inf1"
+ssh root@$network "echo 'PREFIX='$netmask >> /etc/sysconfig/network-scripts/ifcfg-$inf1"
+
+
+ssh root@$network "cat >> "/etc/sysconfig/network-scripts/ifcfg-$inf2" << END
+TYPE=Ethernet
+DEVICE="$inf2"
+NAME=$inf2
+ONBOOT=yes
+OVS_BRIDGE=br-$inf2
+TYPE="OVSPort"
+DEVICETYPE="ovs"
+
+END"
+
+ssh root@$network "cat >> "/etc/sysconfig/network-scripts/ifcfg-br-$inf2" << END
+DEVICE="br-$inf2"
+BOOTPROTO="static"
+IPADDR=$ip_br
+PREFIX=$netmask_br
+GATEWAY=$route_br
+DNS1=8.8.8.8
+ONBOOT="yes"
+TYPE="OVSBridge"
+DEVICETYPE="ovs"
+
+END"
+
 printf "======================================restart neutron-openvswitch============================\n"
-ssh root@192.168.124.130 "systemctl restart neutron-dhcp-agent && systemctl restart neutron-l3-agent && systemctl restart neutron-metadata-agent && systemctl restart neutron-openvswitch-agent"
+ssh root@$network "systemctl restart neutron-dhcp-agent && systemctl restart neutron-l3-agent && systemctl restart neutron-metadata-agent && systemctl restart neutron-openvswitch-agent && systemctl restart neutron-server"
 
 printf "============================config VXLAN on Network done and reboot==========================\n"
 
@@ -1086,7 +1145,7 @@ ssh root@$network "reboot"
 
 vxlan_com(){
 
-printf "======================================config vxlan compute===================================\n"
+printf "======================================Begin config vxlan compute===================================\n"
 
 ssh root@$compute "sed -i 's/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g' /etc/neutron/plugins/ml2/ml2_conf.ini"
 ssh root@$compute "sed -i 's/\#tenant_network_types = local/tenant_network_types = vxlan/g' /etc/neutron/plugins/ml2/ml2_conf.ini"
@@ -1100,7 +1159,7 @@ ssh root@$compute "sed -i 's/\#local_ip = <None>/local_ip = $compute/g' /etc/neu
 
 ssh root@$compute "systemctl restart neutron-openvswitch-agent"
 
-printf "=================================config VXLAN on Computer done and reboot=====================\n"
+printf "=================================Config VXLAN on Compute node done and reboot=====================\n"
 
 ssh root@$compute "reboot"
 }
@@ -1143,6 +1202,7 @@ select opt in "${options[@]}" "EXIT"; do
             echo "Enter password user service:"
             read pass_project_user
 
+            br_network
 	        requirements
 	        keytone
 	        glance
@@ -1202,6 +1262,7 @@ END
             ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
             ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
+            br_network
 	        requirements
 	        keytone
 	        glance
@@ -1273,6 +1334,7 @@ END
             ssh root@$network "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
             ssh root@$network "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
+
 	        requirements
             keytone
             glance
@@ -1280,6 +1342,7 @@ END
             nova_install_conf
             neutron_Keystone
             neutron_server_control
+            br_network_node
             network_node
             horizon_install
             compute_node
@@ -1349,6 +1412,7 @@ END
             ssh root@$storage "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
             ssh root@$storage "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
+            br_network
 		    requirements
 	        keytone
 	        glance
