@@ -1,4 +1,17 @@
+## MENU
 
+### [I Giới thiệu](#I)
+
+### [1 NODE (ALL IN ONE)](#II)
+
+### [2 NODE (CONTROLL-COMPUTE)](#III)
+
+### [3 NODE (CONTROLL-NETWORK-COMPUTE)](#IIII)
+
+
+
+
+### <a name="II"><a/>1 NODE (ALL IN ONE)
 
 sơ đồ và cấu hình **1 node ALL IN ONE**
 
@@ -38,6 +51,8 @@ sơ đồ và cấu hình **1 node ALL IN ONE**
 
 ![image](https://user-images.githubusercontent.com/19284401/68359784-e7218800-014f-11ea-9650-0cf0749a145a.png)
 
+- **restart service nova** khá là lâu các bạn nhé NODE ALL IN ONE của mình 6G RAM mà mất khoảng 10 phút mới restart xong.
+
 - Sau khi Cài đặt và cấu hình xong, ở cuối màn hình sẽ hiện ra link dashboard và thông tin đăng nhập, đồng th NODE sẽ tự động reboot
 
 ![image](https://user-images.githubusercontent.com/19284401/68359950-a5451180-0150-11ea-9c87-4d526d10b899.png)
@@ -58,20 +73,72 @@ sơ đồ và cấu hình **1 node ALL IN ONE**
 
 ![image](https://user-images.githubusercontent.com/19284401/68361166-6feef280-0155-11ea-869b-be7197212d62.png)
 
+- Tạo route
+
+![image](https://user-images.githubusercontent.com/19284401/68393856-6b4f2c00-019f-11ea-92ff-d348d4b3c8fe.png)
+
+- Ad interface cho route
+
+![image](https://user-images.githubusercontent.com/19284401/68395867-24633580-01a3-11ea-8405-ce4b55c13a8c.png)
+![image](https://user-images.githubusercontent.com/19284401/68396124-96d41580-01a3-11ea-8423-9a0a847e4923.png)
 
 
+- Tạo instance và test public connect
+![image](https://user-images.githubusercontent.com/19284401/68396415-1cf05c00-01a4-11ea-826f-90f5ded37fa2.png)
 
+![image](https://user-images.githubusercontent.com/19284401/68396385-106c0380-01a4-11ea-998b-5ffb35a4f4c6.png)
 
+![image](https://user-images.githubusercontent.com/19284401/68396544-4f01be00-01a4-11ea-9fc5-33f3e74813f5.png)
 
+- Như vậy là xong OPENSTACK ALL IN ONE
 
-                
+### <a name="III"><a/> 2 NODE (CONTROLLER-COMPUTE)
 
-Sơ đồ LAB 2 **NODE CONTROLL - COMPUTE**
+**Sơ đồ LAB 2 **NODE CONTROLL - COMPUTE****
 
 ![image](https://user-images.githubusercontent.com/19284401/68357384-c48b7100-0147-11ea-982b-466588c19f58.png)
 ![image](https://user-images.githubusercontent.com/19284401/68357417-e127a900-0147-11ea-8e51-08d4e088fa41.png)
 
+- Cài đặt git
+            
+            yum  -y install git
+             
+- Clone git
 
+            git clone https://github.com/letran3691/openstack.git             
+
+- Phân quyền file 
+            
+            chmod +x openstack/ops.sh
+            
+- Thực thi file
+
+            ./openstack/ops.sh
+            
+            
+- Chọn 2 để cài  **2 NODE CONTROLL - COMPUTE****
+
+![3](https://user-images.githubusercontent.com/19284401/68399477-0993bf80-01a9-11ea-9738-3cf3e7ab0da9.JPG)
+
+- Nhập các thông tin yêu cầu như hình trên thì nhấn ENTER.
+
+**_- Chú ý: Nó yêu cầu nhập password root  bên node compute thì nhớ nhập để copy key ssh nhé_**
+
+- Sau khi điền đầu đủ các thông tin trên nhấn ENTER thì lại ngồi chơi đợi quá trình cài đặt và cấu hình hoàn tất thôi. :D
+
+- Thấy cảnh báo như dưới đây thì bỏ qua, không cần quan tâm.
+
+![image](https://user-images.githubusercontent.com/19284401/68399766-7d35cc80-01a9-11ea-8d42-fc45233a0035.png)
+
+- Restart nova service sẽ khá lâu nhé.
+
+![image](https://user-images.githubusercontent.com/19284401/68400069-ff25f580-01a9-11ea-8482-ba70da0db446.png)
+
+![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
+
+
+
+### <a name="IIII"><a/>3 NODE (CONTROLLER- NETWORK-COMPUTE)
 
 Sơ đồ LAB 3 **NODE CONTROLL - NETWORK - COMPUTE**
 
