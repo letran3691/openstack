@@ -1,14 +1,14 @@
 #!/usr/bin/bash
 
-
-br_network(){
 ip=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f1  -d'/')
 netmask=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f2  -d'/')
 
+hostnamectl set-hostname controll
 
+br_network(){
 ip_br=$(ip addr | grep 'state UP' -A2 | grep inet | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
 netmask_br=$(ip addr | grep 'state UP' -A2 | grep inet | tail -n1 | awk '{print $2}' | cut -f2  -d'/')
-route_br=$(route -n | head -n4 | tail -n1 | awk '{print $2}')
+route_br=$(route -n | head -n4 | grep 0.0 | sort | tail -n1 | awk '{print $2}')
 
 inf1=$(ls /sys/class/net/ | awk '{ if (NR == 1) print $0}')
 
@@ -22,7 +22,7 @@ netmask=$(ssh root@$network "ip addr | grep 'state UP' -A2 | grep inet | head -n
 
 ip_br=$(ssh root@$network "ip addr | grep 'state UP' -A2 | grep inet | tail -n1 | awk '{print \$2}' | cut -f1  -d'/'")
 netmask_br=$(ssh root@$network "ip addr | grep 'state UP' -A2 | grep inet | tail -n1 | awk '{print \$2}' | cut -f2  -d'/'")
-route_br=$(ssh root@$network "route -n | head -n4 | tail -n1 | awk '{print \$2}'")
+route_br=$(ssh root@$network "route -n | head -n4 | grep 0.0 | sort | tail -n1 | awk '{print \$2}'")
 
 inf1=$(ssh root@$network "ls /sys/class/net/ | awk '{ if (NR == 1) print \$0}'")
 
@@ -74,6 +74,7 @@ systemctl enable rabbitmq-server memcached
 rabbitmqctl add_user openstack $pass_rabbitmq
 rabbitmqctl set_permissions openstack ".*" ".*" ".*"
 }
+
 keytone (){
 
 printf "======================================Identity keytone=========================================\n"
@@ -851,7 +852,7 @@ sleep 2
 
 ssh root@$storage "yum -y install centos-release-openstack-queens epel-release"
 ssh root@$storage "sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo"
-ssh root@$storage "yum --enablerepo=centos-openstack-queens,epel -y install openstack-cinder python2-crypto targetcli lvm2"
+ssh root@$storage "yum --enablerepo=centos-openstack-queens,epel -y install openstack-cinder python2-crypto targetcli lvm2 hwinfo"
 
 cinder="/root/openstack/storage/cinder.conf"
 sed -i "s/storage/$storage/g" $cinder
@@ -873,7 +874,7 @@ ssh root@$storage "systemctl start openstack-cinder-volume  && systemctl enable 
 
 printf "=============================format partition=============================\n"
 sleep 2
-dev=$(ssh root@$storage "fdisk -l | grep sdb | cut -f 1 -d ':' | cut -f 2 -d ' '")
+dev=$(ssh root@$storage "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
 
 ssh root@$storage "fdisk $dev <<EOF
 
@@ -1054,9 +1055,11 @@ systemctl restart neutron-server
 for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
 systemctl restart neutron-$service
 done
-systemctl restart neutron-openvswitch-agent
+
+systemctl restart network
 
 printf "======================================config VXLAN done=================================\n"
+
 }
 
 vxlan_con(){
@@ -1138,6 +1141,7 @@ END"
 printf "======================================restart neutron-openvswitch============================\n"
 ssh root@$network "systemctl restart neutron-dhcp-agent && systemctl restart neutron-l3-agent && systemctl restart neutron-metadata-agent && systemctl restart neutron-openvswitch-agent && systemctl restart neutron-server"
 
+systemctl restart network
 printf "============================config VXLAN on Network done and reboot==========================\n"
 
 ssh root@$network "reboot"
@@ -1172,7 +1176,7 @@ sleep 2
 source /root/keystonerc && openstack keypair create --public-key /root/.ssh/id_rsa.pub mykey
 }
 
-options=("INSTALLL 1 NODE ALL IN ONE" "INSTALL 2 NODE (CONTROLLER-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-NETWORK-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
+options=("INSTALL 1 NODE ALL IN ONE" "INSTALL 2 NODE (CONTROLLER-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-NETWORK-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
 
 printf "==============================================================================================\n"
 printf "                                  Menu\n"
@@ -1183,8 +1187,8 @@ select opt in "${options[@]}" "EXIT"; do
 
     case "$REPLY" in
 	    1 )
-	        echo "Enter IP Controller node: "
-            read controller
+
+            controller=$ip
 
             echo "Enter password admin: "
             read pass_admin
@@ -1215,7 +1219,7 @@ select opt in "${options[@]}" "EXIT"; do
 	        vxlan_all
 	        key_private
 	        cat >"info" << END
-ip controller: $controller
+ip controll: $controller
 user: admin
 pass admin: $pass_admin
 pass root sql: $rootsql
@@ -1229,10 +1233,11 @@ user: admin
 password: $pass_admin
 END
 	         printf "\nLink dashboard http://$controller/dashboard domain: default user: admin password: $pass_admin\n"
+             printf "Install and config done, auto reboot\n"
+
 	         reboot;;
 	    2 )
-            echo "Enter IP Controller node: "
-            read controller
+            controller=$ip
 
              echo "Enter IP Compute node: "
             read compute
@@ -1277,7 +1282,7 @@ END
             key_private
 
             cat >"info" << END
-ip controller: $controller
+ip controll: $controller
 ip compute: $compute
 user: admin
 pass admin: $pass_admin
@@ -1292,10 +1297,11 @@ user: admin
 password: $pass_admin
 END
 	         printf "\nLink dashboard http://$controller/dashboard domain: default user: admin password: $pass_admin\n"
+
+	         printf "Install and config done, auto reboot\n"
 	         reboot;;
 	    3 )
-            echo "Enter IP Controller node: "
-            read controller
+            controller=$ip
 
             echo "Enter IP Network node: "
             read network
@@ -1352,7 +1358,7 @@ END
             key_private
 
             cat >"info" << END
-ip controller: $controller
+ip controll: $controller
 ip network: $network
 ip compute: $compute
 user: admin
@@ -1368,12 +1374,13 @@ user: admin
 password: $pass_admin
 END
              printf "\nLink dashboard http://$controller/dashboard domain: default user: admin password: $pass_admin\n"
+
+             printf "Install and config done, auto reboot\n"
              reboot;;
-		    # End Menu
+
 
 		4 )
-            echo "Enter IP Controller node: "
-            read controller
+            controller=$ip
 
             echo "Enter IP Storage node: "
             read storage
@@ -1429,7 +1436,7 @@ END
             key_private
 
             cat >"info" << END
-ip config: $controller
+ip controll: $controller
 ip compute: $compute
 ip storage: $storage
 user: admin
@@ -1445,6 +1452,7 @@ user: admin
 password: $pass_admin
 END
             printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
+            printf "Install and config done, auto reboot\n"
             reboot;;
         5 ) printf "Updating\nPlease try again later\nTHANKS!!! "
             exit;;
