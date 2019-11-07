@@ -6,9 +6,15 @@
 
 ### [2 NODE (CONTROLL-COMPUTE)](#III)
 
-### [3 NODE (CONTROLL-NETWORK-COMPUTE)](#IIII)
+### [3 NODE (CONTROLL-NETWORK-COMPUTE)](#IV)
 
+### [3 NODE (CONTROLL-COMPUTE-STORAGE(LVM backend)))](#V)
 
+### [3 NODE (CONTROLL-COMPUTE-STORAGE(NFS backend)))](#VI)
+
+### [3 NODE (CONTROLL-COMPUTE-STORAGE(mutil backend))](#VII)
+
+### [II DASHBOARD](#VIII)
 
 
 ### <a name="II"><a/>1 NODE (ALL IN ONE)
@@ -138,14 +144,25 @@ sơ đồ và cấu hình **1 node ALL IN ONE**
 
 
 
-### <a name="IIII"><a/>3 NODE (CONTROLLER- NETWORK-COMPUTE)
+### <a name="IV"><a/>3 NODE (CONTROLLER-NETWORK-COMPUTE)
 
-Sơ đồ LAB 3 **NODE CONTROLL - NETWORK - COMPUTE**
+Sơ đồ LAB 3 **NODE CONTROLL-NETWORK-COMPUTE**
 
 ![image](https://user-images.githubusercontent.com/19284401/68357955-9444d200-0149-11ea-8263-a3cf6b3a442c.png)
 ![image](https://user-images.githubusercontent.com/19284401/68357824-2d271d80-0149-11ea-8503-2c37b434917f.png)
 
 
-Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(backend LVM)**
+### <a name="V"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(LVM backend))
+Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 
 ![image](https://user-images.githubusercontent.com/19284401/68358148-382e7d80-014a-11ea-9727-21b773ad54ec.png)
+
+
+### <a name="VI"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))
+Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
+
+### <a name="VII"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(Multi backend))
+Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
+
+### <a name="VIII"><a/>II DASHBOARD
+
