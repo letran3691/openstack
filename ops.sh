@@ -164,7 +164,7 @@ bind_host = 0.0.0.0
 stores = file,http
 default_store = file
 filesystem_store_datadir = /var/lib/glance/images/
-debug = true
+#debug = true
 
 
 [database]
@@ -200,7 +200,7 @@ bind_host = 0.0.0.0
 stores = file,http
 default_store = file
 filesystem_store_datadir = /var/lib/glance/images/
-debug = true
+#debug = true
 
 [database]
 # MariaDB connection info
@@ -284,7 +284,7 @@ enabled_apis = osapi_compute,metadata
 log_dir = /var/log/nova
 # RabbitMQ connection info
 transport_url = rabbit://openstack:$pass_rabbitmq@$controller
-debug = true
+#debug = true
 
 #neutron
 
@@ -432,7 +432,7 @@ notify_nova_on_port_status_changes = True
 notify_nova_on_port_data_changes = True
 # RabbitMQ connection info
 transport_url = rabbit://openstack:$pass_rabbitmq@$controller
-debug = true
+#debug = true
 
 # Keystone auth info
 [keystone_authtoken]
@@ -556,7 +556,7 @@ notify_nova_on_port_status_changes = True
 notify_nova_on_port_data_changes = True
 # RabbitMQ connection info
 transport_url = rabbit://openstack:$pass_rabbitmq@$controller
-debug = true
+#debug = true
 
 # Keystone auth info
 [keystone_authtoken]
@@ -819,7 +819,7 @@ state_path = /var/lib/cinder
 auth_strategy = keystone
 # RabbitMQ connection info
 transport_url = rabbit://openstack:$pass_rabbitmq@$controller
-debug = true
+#debug = true
 
 # MariaDB connection info
 [database]
