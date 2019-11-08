@@ -194,7 +194,7 @@ author: Trunglv
 -->
 - Tạo network và route trên dashboard 
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/LC-ddCl_MJY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>     
+https://youtu.be/LC-ddCl_MJY     
             
             
 ### <a name="V"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(LVM backend))
