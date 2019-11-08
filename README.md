@@ -14,8 +14,9 @@
 
 ### [3 NODE (CONTROLL-COMPUTE-STORAGE(mutil backend))](#VII)
 
-### [II DASHBOARD](#VIII)
 
+
+<a href="http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img" rel="nofollow">Cirros dowload.<a>
 
 ### <a name="II"><a/>1 NODE (ALL IN ONE)
 
@@ -151,18 +152,65 @@ Sơ đồ LAB 3 **NODE CONTROLL-NETWORK-COMPUTE**
 ![image](https://user-images.githubusercontent.com/19284401/68357955-9444d200-0149-11ea-8263-a3cf6b3a442c.png)
 ![image](https://user-images.githubusercontent.com/19284401/68357824-2d271d80-0149-11ea-8503-2c37b434917f.png)
 
+- Cài đặt git
+            
+            yum  -y install git
+             
+- Clone git
 
+            git clone https://github.com/letran3691/openstack.git             
+
+- Phân quyền file 
+            
+            chmod +x openstack/ops.sh
+            
+- Thực thi file
+
+            ./openstack/ops.sh
+
+![3](https://user-images.githubusercontent.com/19284401/68479994-44a7f880-0266-11ea-8322-88f0d0a58820.JPG)
+
+- Nhập các thông tin yêu cầu như hình trên thì nhấn ENTER.
+
+**_- Chú ý: Nó yêu cầu nhập password root  bên node compute và network thì nhớ nhập để copy key ssh nhé_**
+
+- Sau khi điền đầu đủ các thông tin trên nhấn ENTER thì lại ngồi chơi đợi quá trình cài đặt và cấu hình hoàn tất thôi. :D
+
+- Thấy cảnh báo như dưới đây thì bỏ qua, không cần quan tâm.
+
+![image](https://user-images.githubusercontent.com/19284401/68399766-7d35cc80-01a9-11ea-8d42-fc45233a0035.png)
+
+![image](https://user-images.githubusercontent.com/19284401/68400069-ff25f580-01a9-11ea-8482-ba70da0db446.png)
+
+![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
+
+![image](https://user-images.githubusercontent.com/19284401/68482476-4379ca00-026c-11ea-865b-2a23b8b7aaf5.png)
+
+- Cài đặt và cấu hình xong  **3 NODE CONTROLL-NETWORK-COMPUTE**
+
+<!--
+title: dashboard 3 NODE CONTROLL-NETWORK-COMPUTE
+author: Trunglv
+-->
+- Tạo network và route trên dashboard 
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/LC-ddCl_MJY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>     
+            
+            
 ### <a name="V"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(LVM backend))
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 
 ![image](https://user-images.githubusercontent.com/19284401/68358148-382e7d80-014a-11ea-9727-21b773ad54ec.png)
 
 
+
 ### <a name="VI"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
+
+UPDATING....
 
 ### <a name="VII"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(Multi backend))
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 
-### <a name="VIII"><a/>II DASHBOARD
+UPDATING....
 

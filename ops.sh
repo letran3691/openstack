@@ -36,7 +36,7 @@ echo "inf1:" $inf1
 echo "inf2:" $inf2
 }
 
-printf "======================================Create key ssh======================================\n"
+printf "======================================Create key ssh==========================================\n"
 
 sleep 2
 ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
@@ -230,7 +230,7 @@ systemctl start openstack-glance-api openstack-glance-registry
 systemctl enable openstack-glance-api openstack-glance-registry
 }
 nova_Keystone (){
-printf "======================================Nova_service keytone==============================================\n"
+printf "======================================Nova_service keytone===========================================\n"
 sleep 2
 
 ####Configure Nova#1
@@ -265,7 +265,7 @@ mysql -u root -p123456 -e "flush privileges;"
 }
 
 nova_install_conf(){
-printf "======================================Install Nova services========================================\n"
+printf "======================================Install Nova services=====================================\n"
 sleep 2
 
 yum -y install qemu-kvm libvirt virt-install
@@ -354,7 +354,7 @@ su -s /bin/bash nova -c "nova-manage cell_v2 create_cell --name cell1"
 systemctl restart httpd
 chown nova. /var/log/nova/nova-placement-api.log
 
-printf "======================================restart service nova========================================\n"
+printf "======================================restart service nova=======================================\n"
 
 for service in api consoleauth conductor scheduler  novncproxy compute; do
 systemctl start openstack-nova-$service
@@ -387,7 +387,7 @@ novncproxy_base_url = http://$controller:6080/vnc_auto.html
 
 END
 
-printf "======================================restart and enable nova-compute=====================================\n "
+printf "======================================restart and enable nova-compute===============================\n "
 sleep 2
 systemctl start openstack-nova-compute
 systemctl enable openstack-nova-compute
@@ -397,7 +397,7 @@ openstack compute service list
 }
 
 neutron_Keystone(){
-printf "======================================neutron_Keystone======================================\n"
+printf "======================================neutron_Keystone============================================\n"
 sleep 2
 
 source keystonerc && openstack user create --domain default --project service --password $pass_project_user neutron
@@ -519,14 +519,14 @@ ovs-vsctl add-br br-int
 ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini
 su -s /bin/bash neutron -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"
 
-printf "======================================Restart neutron service================================\n "
+printf "======================================Restart neutron service==================================\n "
 
 for service in server dhcp-agent l3-agent metadata-agent openvswitch-agent; do
 systemctl start neutron-$service
 systemctl enable neutron-$service
 done
 
-printf "======================================Restart nova service================================"
+printf "======================================Restart nova service=====================================\n"
 sleep 2
 #systemctl restart neutron-server neutron-metadata-agent
 #systemctl enable neutron-server neutron-metadata-agent
@@ -625,7 +625,7 @@ END
 
 ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini
 su -s /bin/bash neutron -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"
-printf "======================================Restart service=======================================\n"
+printf "======================================Restart service=============================================\n"
 systemctl restart neutron-server neutron-metadata-agent
 systemctl enable neutron-server neutron-metadata-agent
 systemctl restart openstack-nova-api openstack-nova-compute
@@ -634,7 +634,7 @@ systemctl restart openstack-nova-api openstack-nova-compute
 
 network_node(){
 
-printf "======================================Install and config netron service on NETWORK NODE=====================\n"
+printf "======================================Install and config netron service on NETWORK NODE============\n"
 sleep 2
 ssh root@$network "yum -y install centos-release-openstack-queens epel-release"
 ssh root@$network "sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo"
@@ -644,7 +644,7 @@ net_neutron="/root/openstack/network/neutron.conf"
 sed -i "s/controller/$controller/g" $net_neutron
 sed -i "s/pass_rabbitmq/$pass_rabbitmq/g" $net_neutron
 sed -i "s/pass_project_user/$pass_project_user/g" $net_neutron
-sed -i "s/pass_project_user/$pass_user_sql/g" $net_neutron
+sed -i "s/pass_user_sql/$pass_user_sql/g" $net_neutron
 
 
 ssh root@$network "sed -i 's/\#interface_driver = <None>/interface_driver = openvswitch/g' /etc/neutron/l3_agent.ini"
@@ -715,7 +715,7 @@ scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 ssh root@$compute "chmod 640 /etc/nova/nova.conf"
 ssh root@$compute "chgrp nova /etc/nova/nova.conf"
 
-printf "======================================Restart openstack-nova-compute and discovery host======================\n "
+printf "======================================Restart openstack-nova-compute and discovery host==============\n "
 
 ssh root@$compute "systemctl restart openstack-nova-compute"
 ssh root@$compute "systemctl enable openstack-nova-compute"
@@ -723,7 +723,7 @@ ssh root@$compute "systemctl enable openstack-nova-compute"
 su -s /bin/bash nova -c "nova-manage cell_v2 discover_hosts"
 source keystonerc && openstack compute service list
 
-printf "======================================Install neutron, openvswitch=========================\n"
+printf "======================================Install neutron, openvswitch=================================\n"
 sleep 2
 ssh root@$compute "yum --enablerepo=centos-openstack-queens,epel -y install openstack-neutron openstack-neutron-ml2 openstack-neutron-openvswitch"
 
@@ -766,12 +766,12 @@ END
 ssh root@$compute "chmod 640 /etc/neutron/neutron.conf"
 ssh root@$compute "chgrp neutron /etc/neutron/neutron.conf"
 
-printf "======================================Transfer to compute node==========================\n"
+printf "======================================Transfer to compute node===================================\n"
 sleep 2
 scp /root/openstack/compute/neutron.conf root@$compute:/etc/neutron
 scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 
-printf "======================================Start and enale service============================\n"
+printf "======================================Start and enale service=====================================\n"
 sleep 2
 ssh root@$compute "ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini"
 ssh root@$compute "systemctl start openvswitch && systemctl enable openvswitch"
@@ -779,11 +779,11 @@ ssh root@$compute "ovs-vsctl add-br br-int"
 ssh root@$compute "systemctl restart openstack-nova-compute && systemctl enable openstack-nova-compute"
 ssh root@$compute "systemctl start neutron-openvswitch-agent && systemctl enable neutron-openvswitch-agent"
 
-printf "======================================Install libvirt and nova-compute node done=====================\n"
+printf "======================================Install libvirt and nova-compute node done===================\n"
 }
 
 cinder_controller (){
-printf "======================================Configure Cinder (Control Node)==========================\n"
+printf "======================================Configure Cinder (Control Node)==============================\n"
 sleep 2
 
 source keystonerc && openstack user create --domain default --project service --password $pass_project_user cinder
@@ -804,7 +804,7 @@ mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'localhos
 mysql -uroot -p$rootsql -e "grant all privileges on cinder.* to cinder@'%' identified by '"$pass_user_sql"';"
 mysql -uroot -p$rootsql -e "flush privileges;"
 
-printf "======================================Install Cinder Service ==============================="
+printf "======================================Install Cinder Service ===================================\n"
 #controller
 sleep 2
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-cinder
@@ -844,23 +844,23 @@ lock_path = \$state_path/tmp
 END
 
 chmod 640 /etc/cinder/cinder.conf  && chgrp cinder /etc/cinder/cinder.conf
-printf "======================================Sync db cinder======================================\n"
+printf "======================================Sync db cinder============================================\n"
 sleep 2
 su -s /bin/bash cinder -c "cinder-manage db sync"
 
-printf "======================================Restart and enable service==========================\n"
+printf "======================================Restart and enable service=================================\n"
 sleep 2
 systemctl start openstack-cinder-api openstack-cinder-scheduler
 systemctl enable openstack-cinder-api openstack-cinder-scheduler
 
-printf "======================================Show status volume=================================\n"
+printf "======================================Show status volume========================================\n"
 sleep 7
 source keystonerc && openstack volume service list
 }
 
 
 storage_node (){
-printf "======================================Install and configure Cinder (Storage Node) use LVM ================\n"
+printf "======================================Install and configure Cinder (Storage Node) use LVM =========\n"
 # storage node
 sleep 2
 
@@ -879,14 +879,14 @@ scp /root/openstack/storage/cinder.conf root@$storage:/etc/cinder/
 
 ssh root@$storage "chmod 640 /etc/cinder/cinder.conf && chgrp cinder /etc/cinder/cinder.conf "
 
-printf "======================================Start and enable service cinder==============================\n"
+printf "======================================Start and enable service cinder===========================\n"
 sleep 2
 ssh root@$storage "systemctl start openstack-cinder-volume  && systemctl enable openstack-cinder-volume"
 
 
 ################################### config disk lvm
 
-printf "======================================Format partition=============================\n"
+printf "======================================Format partition===========================================\n"
 sleep 2
 dev=$(ssh root@$storage "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
 
@@ -974,7 +974,7 @@ ssh root@$storage "reboot"
 
 
 horizon_install(){
-printf "======================================Horizon_install======================================\n"
+printf "======================================Horizon_install===========================================\n"
 sleep 2
 
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-dashboard
@@ -988,12 +988,12 @@ sed -i "s/OPENSTACK_HOST = \"127.0.0.1\"/OPENSTACK_HOST = \"$controller\"/g" $lo
 dashboard_conf='/etc/httpd/conf.d/openstack-dashboard.conf'
 sed -i "s/WSGISocketPrefix run\/wsgi/WSGISocketPrefix run\/wsgi\nWSGIApplicationGroup %{GLOBAL}/g" $dashboard_conf
 
-printf "======================================Restart httpd======================================\n"
+printf "======================================Restart httpd============================================\n"
 systemctl restart httpd
 }
 
 vxlan_all(){
-printf "======================================Config vxlan======================================\n"
+printf "======================================Config vxlan==============================================\n"
 
 all_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
 sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" $all_ml2_ini
@@ -1012,7 +1012,7 @@ sed -i "s/\[agent]/\[agent]\ntunnel_types = vxlan\nl2_population = True\nprevent
 sed -i "s/\#local_ip = <None>/local_ip = $controller/g" $all_openvswitch_ini
 sed -i "s/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g" $all_openvswitch_ini
 
-printf "======================================Security group and permit icmp, ssh=============================\n"
+printf "======================================Security group and permit icmp, ssh==========================\n"
 sleep 2
 source keystonerc && openstack security group create secgroup01
 source keystonerc && openstack security group rule create --protocol icmp --ingress secgroup01
@@ -1026,7 +1026,7 @@ source keystonerc && openstack security group rule list
 
 ############################################################################################################
 
-printf "======================================Set ip static=============================\n"
+printf "======================================Set ip static================================================\n"
 
 inf_name="/etc/sysconfig/network-scripts/ifcfg-$inf1"
 
@@ -1063,7 +1063,7 @@ END
 
 #############################################################################################################
 
-printf "======================================Restart service=====================================\n"
+printf "======================================Restart service===============================================\n"
 sleep 2
 systemctl restart neutron-server
 for service in dhcp-agent l3-agent metadata-agent openvswitch-agent; do
@@ -1072,12 +1072,12 @@ done
 
 systemctl restart network
 
-printf "======================================Config VXLAN done=================================\n"
+printf "======================================Config VXLAN done=============================================\n"
 
 }
 
 vxlan_con(){
-printf "======================================Config vxlan controller============================\n"
+printf "======================================Config vxlan controller========================================\n"
 con_ml2_ini='/etc/neutron/plugins/ml2/ml2_conf.ini'
 sed -i "s/\#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,gre,vxlan/g" $con_ml2_ini
 sed -i "s/\#flat_networks = \*/flat_networks = physnet1/g" $con_ml2_ini
@@ -1093,14 +1093,14 @@ source keystonerc && openstack security group create secgroup01
 source keystonerc && openstack security group rule create --protocol icmp --ingress secgroup01
 source keystonerc && openstack security group rule create --protocol tcp --dst-port 22:22 secgroup01
 
-printf "======================================List security group==========================================\n"
+printf "======================================List security group=============================================\n"
 sleep 2
 source keystonerc && openstack security group rule list
-printf "======================================Config VXLAN on controller done=======================\n"
+printf "======================================Config VXLAN on controller done=================================\n"
 }
 
 vxlan_net(){
-printf "======================================Begin config vxlan networkprintf "======================================
+printf "======================================Begin config vxlan network======================================\n"
 
 inf=$(ssh root@$network "ls /sys/class/net/ | awk '{ if (NR == 3) print \$0}'")
 echo $inf
@@ -1118,7 +1118,7 @@ ssh root@$network "sed -i 's/\#local_ip = <None>/local_ip = $network/g' /etc/neu
 ssh root@$network "sed -i 's/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g' /etc/neutron/plugins/ml2/openvswitch_agent.ini"
 
 
-printf "======================================Set ip staticprintf======================================\n"
+printf "======================================Set ip static===========================================\n"
 
 #inf_name=$(ssh root@$network "/etc/sysconfig/network-scripts/ifcfg-$inf1")
 
@@ -1152,11 +1152,11 @@ DEVICETYPE="ovs"
 
 END"
 
-printf "======================================Restart neutron-openvswitch============================\n"
+printf "======================================Restart neutron-openvswitch==================================\n"
 ssh root@$network "systemctl restart neutron-dhcp-agent && systemctl restart neutron-l3-agent && systemctl restart neutron-metadata-agent && systemctl restart neutron-openvswitch-agent && systemctl restart neutron-server"
 
 systemctl restart network
-printf "======================================Config VXLAN on Network done and reboot==========================\n"
+printf "======================================Config VXLAN on Network done and reboot======================\n"
 
 ssh root@$network "reboot"
 }
