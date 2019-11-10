@@ -864,6 +864,19 @@ printf "======================================Install and configure Cinder (Stor
 # storage node
 sleep 2
 
+
+inf_sto=$(ssh root@$storage "ls /sys/class/net/ | awk '{ if (NR == 1) print \$1}'")
+ip_sto=$(ssh root@$storage "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f1  -d'/'")
+netmask_sto=$(ssh root@$storage "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f2  -d'/'")
+route_sto=$(ssh root@$storage "route -n | head -n3 | grep 0.0 | awk '{print \$2}'")
+
+ssh root@$storage "sed -i 's/BOOTPROTO=\"dhcp\"/BOOTPROTO=\"static\"/g' /etc/sysconfig/network-scripts/ifcfg-$inf_sto"
+
+ssh root@$storage "echo 'IPADDR='$ip_sto >> /etc/sysconfig/network-scripts/ifcfg-$inf_sto"
+ssh root@$storage "echo 'PREFIX='$netmask_sto >> /etc/sysconfig/network-scripts/ifcfg-$inf_sto"
+ssh root@$storage "echo 'GATEWAY='$route_sto >> /etc/sysconfig/network-scripts/ifcfg-$inf_sto"
+ssh root@$storage "echo 'DNS1='8.8.8.8 >> /etc/sysconfig/network-scripts/ifcfg-$inf_sto"
+
 ssh root@$storage "yum -y install centos-release-openstack-queens epel-release"
 ssh root@$storage "sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-OpenStack-queens.repo"
 ssh root@$storage "yum --enablerepo=centos-openstack-queens,epel -y install openstack-cinder python2-crypto targetcli lvm2 hwinfo"
