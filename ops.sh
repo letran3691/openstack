@@ -969,10 +969,8 @@ ssh root@$storage "systemctl restart openstack-cinder-volume "
 cinder_nova='/root/openstack/compute/nova.conf'
 cat >> "/root/openstack/compute/nova.conf" << END
 
-
 [cinder]
 os_region_name = RegionOne
-
 
 END
 
@@ -1481,12 +1479,12 @@ END
             printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
             printf "Install and config done, auto reboot\n"
             reboot;;
-        5 ) printf "Updating\nPlease try again later\nTHANKS!!! "
+        5 ) printf "Updating\nPlease try again later\nTHANKS!!!\n "
             exit;;
-        6 ) printf "Updating\nPlease try again later\nTHANKS!!! "
+        6 ) printf "Updating\nPlease try again later\nTHANKS!!!\n "
             exit;;
 
-	    $(( ${#options[@]}+1 )) ) printf "\nInstall and config done!!!\nLink dashboard http://$controller/dashboard domain: default user: admin password: $pass_admin\n\n" ; break;;
+	    $(( ${#options[@]}+1 )) ) printf "Thank for use my shell\n" ; break;;
 	    *) echo "Your option wrong, Please choose again!!!";continue;;
 
 
