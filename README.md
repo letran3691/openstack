@@ -194,23 +194,43 @@ author: Trunglv
 -->
 - Tạo network và route trên dashboard 
 
-[![Tạo network và route trên dashboard ](https://i9.ytimg.com/vi/LC-ddCl_MJY/mq2.jpg?sqp=CPiPlu4F&rs=AOn4CLCCwmewW23N4Crd_RMDps0-kCnqcg)](https://www.youtube.com/watch?v=LC-ddCl_MJY&feature=youtu.be)
+[![Tạo network và route trên dashboard ](https://i9.ytimg.com/vi/LC-ddCl_MJY/mq2.jpg?sqp=CJyFnu4F&rs=AOn4CLArmxKzM28ugXAKXVIlpVvKO6vt-Q)](https://www.youtube.com/watch?v=LC-ddCl_MJY&feature=youtu.be)
             
             
 ### <a name="V"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(LVM backend))
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 
 ![image](https://user-images.githubusercontent.com/19284401/68358148-382e7d80-014a-11ea-9727-21b773ad54ec.png)
+![3](https://user-images.githubusercontent.com/19284401/68538423-ab343000-03a6-11ea-8952-0194a90a9736.JPG)
+
+- Cài đặt git
+            
+            yum  -y install git
+             
+- Clone git
+
+            git clone https://github.com/letran3691/openstack.git             
+
+- Phân quyền file 
+            
+            chmod +x openstack/ops.sh
+            
+- Thực thi file
+
+            ./openstack/ops.sh
+
+
+
 
 
 
 ### <a name="VI"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))
-Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
+Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(NFS backend)**
 
 UPDATING....
 
 ### <a name="VII"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(Multi backend))
-Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
+Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
 
 UPDATING....
 
