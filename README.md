@@ -219,6 +219,17 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 
             ./openstack/ops.sh
 
+![image](https://user-images.githubusercontent.com/19284401/68592600-0dd01d80-04c6-11ea-8558-4f393902b4f4.png)
+
+- Nhập các thông tin yêu cầu như hình trên thì nhấn ENTER.
+
+**_- Chú ý: Nó yêu cầu nhập password root  bên node storage và compute thì nhớ nhập để copy key ssh nhé_**
+
+- Sau khi điền đầu đủ các thông tin trên nhấn ENTER thì lại ngồi chơi đợi quá trình cài đặt và cấu hình hoàn tất thôi. :D
+
+- Thấy cảnh báo như dưới đây thì bỏ qua, không cần quan tâm.
+
+![image](https://user-images.githubusercontent.com/19284401/68399766-7d35cc80-01a9-11ea-8d42-fc45233a0035.png)
 
 
 
@@ -226,6 +237,8 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 
 ### <a name="VI"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(NFS backend)**
+
+
 
 UPDATING....
 

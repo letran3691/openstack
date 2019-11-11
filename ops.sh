@@ -903,7 +903,7 @@ printf "======================================Format partition==================
 sleep 2
 dev=$(ssh root@$storage "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
 
-ssh root@$storage "fdisk $dev <<EOF
+ssh root@$storage "fdisk /dev/$dev <<EOF
 
 n
 p
@@ -918,7 +918,7 @@ EOF"
 printf "======================================Convert partion to lvm=============================\n"
 sleep 2
 
-ssh root@$storage "fdisk $dev <<EOF
+ssh root@$storage "fdisk /dev/$dev <<EOF
 
 t
 8e
@@ -928,8 +928,8 @@ EOF"
 
 printf "======================================Create group and volume data=============================\n"
 sleep 2
-ssh root@$storage "pvcreate "$dev"1"
-ssh root@$storage "vgcreate -s 32M vg-data "$dev"1"
+ssh root@$storage "pvcreate /dev/"$dev"1"
+ssh root@$storage "vgcreate -s 32M vg-data /dev/"$dev"1"
 
 #size=$(ssh root@$storage "fdisk -l | grep sdb | cut -f 3 -d ' ' | cut -f 1 -d '.'")
 #
