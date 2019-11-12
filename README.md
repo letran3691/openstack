@@ -194,7 +194,7 @@ author: Trunglv
 -->
 - Link hướng dẫn tạo network và route trên dashboard 
 
-[![Tạo network và route trên dashboard ](https://i9.ytimg.com/vi/LC-ddCl_MJY/mqdefault.jpg?time=1573555334692&sqp=CICYqu4F&rs=AOn4CLCC1qVo_6st9ZWRXSbViY3hFU_Axg)](https://www.youtube.com/watch?v=LC-ddCl_MJY)
+[![Tạo network và route trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://www.youtube.com/watch?v=LC-ddCl_MJY)
             
             
 ### <a name="V"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(LVM backend))
