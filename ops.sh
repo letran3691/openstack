@@ -859,7 +859,7 @@ source keystonerc && openstack volume service list
 }
 
 
-storage_node (){
+storage_node_lvm (){
 printf "======================================Install and configure Cinder (Storage Node) use LVM =========\n"
 # storage node
 sleep 2
@@ -938,7 +938,7 @@ ssh root@$storage "vgcreate -s 32M vg-data /dev/"$dev"1"
 #ssh root@$storage "lvcreate -L " $lvm"G -n lv-data vg-data"
 
 cinder_lvm="/root/openstack/storage/cinder.conf"
-sed -i "s/#lvm/enabled_backends = lvm/g" $cinder_lvm
+sed -i "s/\#enabled_backends/enabled_backends = lvm/g" $cinder_lvm
 
 cat >> "/root/openstack/storage/cinder.conf" << END
 
@@ -982,6 +982,143 @@ ssh root@$compute "systemctl restart openstack-nova-compute "
 
 ssh root@$storage "reboot"
 }
+
+
+storage_node_nfs(){
+printf "======================================Node Storage nfs backend===================================\n"
+
+echo "Enter NFS server:"
+read nfs_server
+
+inf_nfs=$(ssh root@$nfs_server "ls /sys/class/net/ | awk '{ if (NR == 1) print \$1}'")
+ip_nfs=$(ssh root@$nfs_server "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f1  -d'/'")
+netmask_nfs=$(ssh root@$nfs_server "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f2  -d'/'")
+route_nfs=$(ssh root@$nfs_server "route -n | head -n3 | grep 0.0 | awk '{print \$2}'")
+
+subnet_nfs=$(ssh root@$nfs_server "route -n | tail -n1 | awk '{print \$1}'")
+
+ssh root@$nfs_server "sed -i 's/BOOTPROTO=\"dhcp\"/BOOTPROTO=\"static\"/g' /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+
+ssh root@$nfs_server "echo 'IPADDR='$ip_nfs >> /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+ssh root@$nfs_server "echo 'PREFIX='$netmask_nfs >> /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+ssh root@$nfs_server "echo 'GATEWAY='$route_nfs >> /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+ssh root@$nfs_server "echo 'DNS1='8.8.8.8 >> /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+
+ssh root@$nfs_server "yum -y install epel-release  && yum -y install nfs-utils lvm2 hwinfo"
+
+ssh root@$nfs_server "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
+ssh root@$nfs_server " echo '/data $subnet_nfs/$netmask_nfs(rw,no_root_squash)' > /etc/exports"
+
+################################### config disk lvm
+
+printf "======================================Format partition===========================================\n"
+sleep 2
+    dev_nfs=$(ssh root@$nfs "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
+
+ssh root@$nfs_server "fdisk /dev/$dev_nfs <<EOF
+
+n
+p
+
+
+
+
+w
+
+EOF"
+
+printf "======================================Convert partion to lvm=============================\n"
+sleep 2
+
+ssh root@$nfs_server "fdisk /dev/$dev_nfs <<EOF
+
+t
+8e
+w
+
+EOF"
+
+printf "======================================Create group and volume data=============================\n"
+sleep 2
+ssh root@$nfs_server "pvcreate /dev/"$dev_nfs"1"
+ssh root@$nfs_server "vgcreate -s 32M vg-data /dev/"$dev_nfs"1"
+
+disk=$(ssh root@$nfs "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
+
+volume_zise=$(ssh root@$nfs "fdisk -l | sort | grep $disk |sort | tail -n1 | awk '{print \$3}' | cut -f1 -d '.'")
+
+vl=`expr $volume_zise - 2`
+
+ssh root@$nfs_server "lvcreate -L $vl""G -n lv-data vg-data"
+ssh root@$nfs_server "mkfs -t ext4 /dev/vg-data/lv-data"
+
+
+
+ssh root@$nfs_server "mkdir /volume_nfs"
+ssh root@$nfs_server "mount /dev/vg-data/lv-data /volume_nfs"
+
+ssh root@$nfs_server "echo '/dev/vg-data/lv-data   /volume_nfs                   ext4            defaults 0 0' >> /etc/fstab"
+
+ssh root@$nfs_server "systemctl start rpcbind nfs-server"
+ssh root@$nfs_server "systemctl enable rpcbind nfs-server"
+
+printf "======================================Config on Node Storage=====================================\n"
+
+ssh root@$storage "yum -y install nfs-utils"
+
+ssh root@$storage "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
+
+
+cinder_lvm="/root/openstack/storage/cinder.conf"
+sed -i "s/\#enabled_backends/enabled_backends = nfs/g" $cinder_lvm
+
+cat >> "/root/openstack/storage/cinder.conf" << END
+
+[nfs]
+volume_driver = cinder.volume.drivers.nfs.NfsDriver
+nfs_shares_config = /etc/cinder/nfs_shares
+nfs_mount_point_base = $state_path/mnt
+
+
+END
+
+scp /root/openstack/storage/cinder.conf root@$storage:/etc/cinder/
+
+ssh root@$storage "mkdir /volume_nfs"
+
+ssh root@$storage "echo '$nfs_server:/volume_nfs' >> /etc/cinder/nfs_shares"
+
+ssh root@$storage "chmod 640 /etc/cinder/nfs_shares"
+ssh root@$storage "chgrp cinder /etc/cinder/nfs_shares"
+ssh root@$storage "systemctl restart openstack-cinder-volume"
+ssh root@$storage "chown -R cinder. /var/lib/cinder/mnt"
+
+ssh root@$storage "systemctl start rpcbind && systemctl enable rpcbind"
+
+
+printf "======================================Config on Node Compute========================================="
+
+ssh root@$compute "yum -y install nfs-utils"
+ssh root@$compute "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
+ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
+
+#####cinder compute node
+
+
+cat >> "/root/openstack/compute/nova.conf" << END
+
+[cinder]
+os_region_name = RegionOne
+
+END
+
+scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
+
+ssh root@$compute "systemctl restart openstack-nova-compute"
+ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
+
+}
+
 
 
 horizon_install(){
@@ -1455,7 +1592,7 @@ END
 	        horizon_install
 	        compute_node
 	        cinder_controller
-	        storage_node
+	        storage_node_lvm
 	        vxlan_all
             vxlan_com
             key_private
