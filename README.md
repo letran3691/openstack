@@ -192,7 +192,7 @@ Sơ đồ LAB 3 **NODE CONTROLL-NETWORK-COMPUTE**
 title: dashboard 3 NODE CONTROLL-NETWORK-COMPUTE
 author: Trunglv
 -->
-- Link hướng dẫn tạo network và route trên dashboard 
+- Link hướng dẫn tạo network và route trên dashboard (click vào ảnh phía dưới).
 
 [![Tạo network và route trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://www.youtube.com/watch?v=LC-ddCl_MJY)
             
