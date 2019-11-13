@@ -234,15 +234,63 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 ![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
 
 
+<!--
+title: dashboard 3 NODE CONTROLL-NETWORK-COMPUTE
+author: Trunglv
+-->
+- Link hướng dẫn tạo volume và attach volume trên dashboard (click vào ảnh phía dưới).
 
+[![Tạo volume và attach trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://youtu.be/6MngoLDlWYQ)
 
 
 ### <a name="VI"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(NFS backend)**
 
+_**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
+
+![image](https://user-images.githubusercontent.com/19284401/68775821-ae0e7980-0661-11ea-8b6a-9d299e21f8f0.png)
 
 
-UPDATING....
+![3](https://user-images.githubusercontent.com/19284401/68772916-33dbf600-065d-11ea-9a2c-f1857c1a8156.JPG)
+
+
+- Cài đặt git
+            
+            yum  -y install git
+             
+- Clone git
+
+            git clone https://github.com/letran3691/openstack.git             
+
+- Phân quyền file 
+            
+            chmod +x openstack/ops.sh
+            
+- Thực thi file
+
+            ./openstack/ops.sh
+
+
+![Untitled-1](https://user-images.githubusercontent.com/19284401/68774590-ead97100-065f-11ea-8137-cb213ac6fce3.png)
+
+- Nhập các thông tin yêu cầu như hình trên thì nhấn ENTER.
+
+**_- Chú ý: Nó yêu cầu nhập password root  bên node storage và compute và NFS server thì nhớ nhập để copy key ssh nhé_**
+
+- Sau khi điền đầu đủ các thông tin trên nhấn ENTER thì lại ngồi chơi đợi quá trình cài đặt và cấu hình hoàn tất thôi. :D
+
+- Thấy cảnh báo như dưới đây thì bỏ qua, không cần quan tâm.
+
+![image](https://user-images.githubusercontent.com/19284401/68399766-7d35cc80-01a9-11ea-8d42-fc45233a0035.png)
+
+- Phải nói là cái LAB này nova-compute start quá lâu luôn. 10p mà vẫn chưa start được service.
+
+![image](https://user-images.githubusercontent.com/19284401/68776466-b1563500-0662-11ea-816a-14d4d604a781.png)
+
+
+![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
+
+
 
 ### <a name="VII"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(Multi backend))
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
