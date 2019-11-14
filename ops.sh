@@ -1016,9 +1016,10 @@ ssh root@$nfs_server " echo '/volume_nfs $subnet_nfs/$netmask_nfs(rw,no_root_squ
 
 ################################### config disk lvm
 
-printf "======================================Format partition===========================================\n"
+printf "======================================Format partition NFS===========================================\n"
 sleep 2
-    dev_nfs=$(ssh root@$nfs_server "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
+
+dev_nfs=$(ssh root@$nfs_server "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
 
 ssh root@$nfs_server "fdisk /dev/$dev_nfs <<EOF
 
@@ -1032,7 +1033,7 @@ w
 
 EOF"
 
-printf "======================================Convert partion to lvm=============================\n"
+printf "======================================Convert partion to lvm NFS=============================\n"
 sleep 2
 
 ssh root@$nfs_server "fdisk /dev/$dev_nfs <<EOF
@@ -1061,15 +1062,16 @@ echo $vl
 ssh root@$nfs_server "lvcreate -L $vl""G -n lv-data vg-data"
 ssh root@$nfs_server "mkfs -t ext4 /dev/vg-data/lv-data"
 
-
-
 ssh root@$nfs_server "mkdir /volume_nfs"
 ssh root@$nfs_server "mount /dev/vg-data/lv-data /volume_nfs"
-
 ssh root@$nfs_server "echo '/dev/vg-data/lv-data   /volume_nfs                   ext4            defaults 0 0' >> /etc/fstab"
+ssh root@$nfs_server "systemctl start rpcbind nfs-server && systemctl enable rpcbind nfs-server"
 
-ssh root@$nfs_server "systemctl start rpcbind nfs-server"
-ssh root@$nfs_server "systemctl enable rpcbind nfs-server"
+
+printf "======================================reboot nfs server=====================================\n"
+
+ssh root@$nfs_server "reboot"
+
 
 printf "======================================Config on Node Storage=====================================\n"
 
@@ -1115,7 +1117,7 @@ cat >> "/root/openstack/storage/cinder.conf" << END
 [nfs]
 volume_driver = cinder.volume.drivers.nfs.NfsDriver
 nfs_shares_config = /etc/cinder/nfs_shares
-nfs_mount_point_base = $state_path/mnt
+nfs_mount_point_base = \$state_path/mnt
 
 END
 
@@ -1133,7 +1135,12 @@ ssh root@$storage "chown -R cinder. /var/lib/cinder/mnt"
 ssh root@$storage "systemctl start rpcbind && systemctl enable rpcbind"
 
 
-printf "======================================Config on Node Compute========================================="
+printf "======================================reboot node storage=========================================\n"
+
+ssh root@$storage "reboot"
+
+
+printf "======================================Config on Node Compute=========================================\n"
 
 ssh root@$compute "yum -y install nfs-utils"
 ssh root@$compute "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
