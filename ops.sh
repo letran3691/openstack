@@ -1697,11 +1697,11 @@ END
             ssh root@$storage "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
             ssh root@$storage "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
-            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$nfs
-            ssh root@$nfs "systemctl stop firewalld && systemctl disable firewalld"
-            ssh root@$nfs "systemctl stop NetworkManager && systemctl disable NetworkManager"
-            ssh root@$nfs "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
-            ssh root@$nfs "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$nfs_server
+            ssh root@$nfs_server "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$nfs_server "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$nfs_server "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$nfs_server "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
             br_network
 		    requirements
