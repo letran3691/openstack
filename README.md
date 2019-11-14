@@ -2,7 +2,7 @@
 
 ### [I: GIỚI THIỆU](#I)
 
-### [II: INSTALL AND CONFIG]()
+### [II: INSTALL AND CONFIG](2.1)
 
 - #### [1 NODE (ALL IN ONE)](#2.1)
 
