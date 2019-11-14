@@ -364,7 +364,7 @@ systemctl start openstack-nova-$service
 systemctl enable openstack-nova-$service
 done
 
-printf "======================================nova-compute======================================"
+printf "======================================nova-compute======================================\n"
 
 #systemctl restart openstack-nova-compute
 systemctl enable openstack-nova-compute
@@ -1664,7 +1664,7 @@ END
 
 
             echo "Enter IP NFS server: "
-            read nfs
+            read nfs_server
 
             echo "Enter password admin: "
             read pass_admin
