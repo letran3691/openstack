@@ -1,29 +1,36 @@
 ## MENU
 
-### [I Giới thiệu](#I)
+### [I: GIỚI THIỆU](#I)
 
-### [1 NODE (ALL IN ONE)](#II)
+### [II: INSTALL AND CONFIG]()
 
-### [2 NODE (CONTROLL-COMPUTE)](#III)
+- #### [1 NODE (ALL IN ONE)](#2.1)
 
-### [3 NODE (CONTROLL-NETWORK-COMPUTE)](#IV)
+- #### [2 NODE (CONTROLL-COMPUTE)](#2.2)
 
-### [3 NODE (CONTROLL-COMPUTE-STORAGE(LVM backend)))](#V)
+- #### [3 NODE (CONTROLL-NETWORK-COMPUTE)](#2.3)
 
-### [3 NODE (CONTROLL-COMPUTE-STORAGE(NFS backend)))](#VI)
+- #### [3 NODE (CONTROLL-COMPUTE-STORAGE(LVM backend)))](#2.4)
 
-### [3 NODE (CONTROLL-COMPUTE-STORAGE(mutil backend))](#VII)
+- #### [3 NODE (CONTROLL-COMPUTE-STORAGE(NFS backend)))](#2.5)
+
+- #### [3 NODE (CONTROLL-COMPUTE-STORAGE(mutil backend))](#2.6)
+
+### [III: BASIC COMMAND](#III)
+
+### [III: WEB GUID ](#IV)
+
+
 
 
 
 <a href="http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img" rel="nofollow">Cirros dowload.<a>
 
-### <a name="II"><a/>1 NODE (ALL IN ONE)
+### <a name="2.1"><a/>1 NODE (ALL IN ONE)
 
 sơ đồ và cấu hình **1 node ALL IN ONE**
 
 ![image](https://user-images.githubusercontent.com/19284401/68357223-2d261e00-0147-11ea-8808-174a5afdbf37.png)
-
 ![image](https://user-images.githubusercontent.com/19284401/68355669-8b043700-0142-11ea-9155-5350234b3497.png)
 
 - Cài đặt git
@@ -92,14 +99,12 @@ sơ đồ và cấu hình **1 node ALL IN ONE**
 
 - Tạo instance và test public connect
 ![image](https://user-images.githubusercontent.com/19284401/68396415-1cf05c00-01a4-11ea-826f-90f5ded37fa2.png)
-
 ![image](https://user-images.githubusercontent.com/19284401/68396385-106c0380-01a4-11ea-998b-5ffb35a4f4c6.png)
-
 ![image](https://user-images.githubusercontent.com/19284401/68396544-4f01be00-01a4-11ea-9fc5-33f3e74813f5.png)
 
 - Như vậy là xong OPENSTACK ALL IN ONE
 
-### <a name="III"><a/> 2 NODE (CONTROLLER-COMPUTE)
+### <a name="2.2"><a/> 2 NODE (CONTROLLER-COMPUTE)
 
 **Sơ đồ LAB 2 **NODE CONTROLL - COMPUTE****
 
@@ -140,12 +145,11 @@ sơ đồ và cấu hình **1 node ALL IN ONE**
 - Restart nova service sẽ khá lâu nhé.
 
 ![image](https://user-images.githubusercontent.com/19284401/68400069-ff25f580-01a9-11ea-8482-ba70da0db446.png)
-
 ![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
 
 
 
-### <a name="IV"><a/>3 NODE (CONTROLLER-NETWORK-COMPUTE)
+### <a name="2.3"><a/>3 NODE (CONTROLLER-NETWORK-COMPUTE)
 
 Sơ đồ LAB 3 **NODE CONTROLL-NETWORK-COMPUTE**
 
@@ -179,11 +183,8 @@ Sơ đồ LAB 3 **NODE CONTROLL-NETWORK-COMPUTE**
 - Thấy cảnh báo như dưới đây thì bỏ qua, không cần quan tâm.
 
 ![image](https://user-images.githubusercontent.com/19284401/68399766-7d35cc80-01a9-11ea-8d42-fc45233a0035.png)
-
 ![image](https://user-images.githubusercontent.com/19284401/68400069-ff25f580-01a9-11ea-8482-ba70da0db446.png)
-
 ![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
-
 ![image](https://user-images.githubusercontent.com/19284401/68482476-4379ca00-026c-11ea-865b-2a23b8b7aaf5.png)
 
 - Cài đặt và cấu hình xong  **3 NODE CONTROLL-NETWORK-COMPUTE**
@@ -197,7 +198,7 @@ author: Trunglv
 [![Tạo network và route trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://www.youtube.com/watch?v=LC-ddCl_MJY)
             
             
-### <a name="V"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(LVM backend))
+### <a name="2.4"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(LVM backend))
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 
 ![image](https://user-images.githubusercontent.com/19284401/68358148-382e7d80-014a-11ea-9727-21b773ad54ec.png)
@@ -230,7 +231,6 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 - Thấy cảnh báo như dưới đây thì bỏ qua, không cần quan tâm.
 
 ![image](https://user-images.githubusercontent.com/19284401/68399766-7d35cc80-01a9-11ea-8d42-fc45233a0035.png)
-
 ![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
 
 
@@ -243,13 +243,15 @@ author: Trunglv
 [![Tạo volume và attach trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://youtu.be/6MngoLDlWYQ)
 
 
-### <a name="VI"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))
-Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(NFS backend)**
+### <a name="2.5"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))
 
 _**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
 
 ![image](https://user-images.githubusercontent.com/19284401/68775821-ae0e7980-0661-11ea-8b6a-9d299e21f8f0.png)
 
+Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(NFS backend)**
+
+![image](https://user-images.githubusercontent.com/19284401/68823125-746f5a00-06c5-11ea-863d-4125074a7085.png)
 
 ![3](https://user-images.githubusercontent.com/19284401/68772916-33dbf600-065d-11ea-9a2c-f1857c1a8156.JPG)
 
@@ -292,8 +294,20 @@ _**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
 
 
 
-### <a name="VII"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(Multi backend))
+### <a name="2.6"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(Multi backend))
+
+_**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
+
+![image](https://user-images.githubusercontent.com/19284401/68775821-ae0e7980-0661-11ea-8b6a-9d299e21f8f0.png)
+
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
 
-UPDATING....
+![image](https://user-images.githubusercontent.com/19284401/68823250-c912d500-06c5-11ea-8020-762ffd33abe3.png)
+![3](https://user-images.githubusercontent.com/19284401/68772916-33dbf600-065d-11ea-9a2c-f1857c1a8156.JPG)
+
+### <a name="III"><a/>III: BASIC COMMAND
+
+### <a name=""><a/>IV: WEB GUID
+
+
 
