@@ -285,8 +285,6 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(NFS backend)**
 
 ![image](https://user-images.githubusercontent.com/19284401/68399766-7d35cc80-01a9-11ea-8d42-fc45233a0035.png)
 
-- Phải nói là cái LAB này nova-compute start quá lâu luôn. 10p mà vẫn chưa start được service.
-
 ![image](https://user-images.githubusercontent.com/19284401/68776466-b1563500-0662-11ea-816a-14d4d604a781.png)
 ![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
 
