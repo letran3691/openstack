@@ -1127,6 +1127,7 @@ ssh root@$storage "mkdir /volume_nfs"
 
 ssh root@$storage "echo '$nfs_server:/volume_nfs' >> /etc/cinder/nfs_shares"
 
+ssh root@$storage "mkdir /var/lib/cinder/mnt"
 ssh root@$storage "chmod 640 /etc/cinder/nfs_shares"
 ssh root@$storage "chgrp cinder /etc/cinder/nfs_shares"
 ssh root@$storage "systemctl restart openstack-cinder-volume"
@@ -1730,7 +1731,7 @@ END
 ip controll: $controller
 ip compute: $compute
 ip storage: $storage
-ip nfs server: $nfs
+ip nfs server: $nfs_server
 user: admin
 pass admin: $pass_admin
 pass root sql: $rootsql

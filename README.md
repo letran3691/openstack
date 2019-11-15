@@ -288,9 +288,19 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(NFS backend)**
 - Phải nói là cái LAB này nova-compute start quá lâu luôn. 10p mà vẫn chưa start được service.
 
 ![image](https://user-images.githubusercontent.com/19284401/68776466-b1563500-0662-11ea-816a-14d4d604a781.png)
-
-
 ![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
+
+- Mình tạo 2 instance:
+    
+    - 1 là volume mặc định của instance mấy vài phút, là instance tạo xong.
+    - Instance thứ 2 tạo volume từ NFS rất lâu mới tạo xong (21 phút) có thể có do cấu hình LAB đuối quá, nên tọa lâu. Nhưng instance vậy hoạt động ngon lành.
+
+- Một vài hình ảnh về storage NFS backend.
+
+![image](https://user-images.githubusercontent.com/19284401/68952449-73881680-07f2-11ea-8550-ca58f545cdbd.png)
+![image](https://user-images.githubusercontent.com/19284401/68953443-7d127e00-07f4-11ea-8f06-f134be005608.png)
+
+
 
 
 
