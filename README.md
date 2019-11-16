@@ -2,7 +2,7 @@
 
 ### [I: GIỚI THIỆU](#I)
 
-### [II: INSTALL AND CONFIG](2.1)
+### [II: INSTALL AND CONFIG](#2.1)
 
 - #### [1 NODE (ALL IN ONE)](#2.1)
 
@@ -22,11 +22,9 @@
 
 
 
-
-
 <a href="http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img" rel="nofollow">Cirros dowload.<a>
 
-### <a name="2.1"><a/>1 NODE (ALL IN ONE)
+### <a name="2.1"><a/>**1 NODE (ALL IN ONE)**
 
 sơ đồ và cấu hình **1 node ALL IN ONE**
 
@@ -104,7 +102,7 @@ sơ đồ và cấu hình **1 node ALL IN ONE**
 
 - Như vậy là xong OPENSTACK ALL IN ONE
 
-### <a name="2.2"><a/> 2 NODE (CONTROLLER-COMPUTE)
+### <a name="2.2"><a/> **2 NODE (CONTROLLER-COMPUTE)**
 
 **Sơ đồ LAB 2 **NODE CONTROLL - COMPUTE****
 
@@ -149,7 +147,7 @@ sơ đồ và cấu hình **1 node ALL IN ONE**
 
 
 
-### <a name="2.3"><a/>3 NODE (CONTROLLER-NETWORK-COMPUTE)
+### <a name="2.3"><a/>**3 NODE (CONTROLLER-NETWORK-COMPUTE)**
 
 Sơ đồ LAB 3 **NODE CONTROLL-NETWORK-COMPUTE**
 
@@ -198,7 +196,7 @@ author: Trunglv
 [![Tạo network và route trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://www.youtube.com/watch?v=LC-ddCl_MJY)
             
             
-### <a name="2.4"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(LVM backend))
+### <a name="2.4"><a/>**3 NODE (CONTROLLER-COMPUTE-STORACE(LVM backend))**
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 
 ![image](https://user-images.githubusercontent.com/19284401/68358148-382e7d80-014a-11ea-9727-21b773ad54ec.png)
@@ -243,7 +241,7 @@ author: Trunglv
 [![Tạo volume và attach trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://youtu.be/6MngoLDlWYQ)
 
 
-### <a name="2.5"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))
+### <a name="2.5"><a/>**3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))**
 
 _**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
 
@@ -299,10 +297,7 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(NFS backend)**
 ![image](https://user-images.githubusercontent.com/19284401/68953443-7d127e00-07f4-11ea-8f06-f134be005608.png)
 
 
-
-
-
-### <a name="2.6"><a/>3 NODE (CONTROLLER-COMPUTE-STORACE(Multi backend))
+### <a name="2.6"><a/>**3 NODE (CONTROLLER-COMPUTE-STORACE(Multi backend))**
 
 _**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
 
@@ -311,11 +306,45 @@ _**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
 
 ![image](https://user-images.githubusercontent.com/19284401/68823250-c912d500-06c5-11ea-8020-762ffd33abe3.png)
-![3](https://user-images.githubusercontent.com/19284401/68772916-33dbf600-065d-11ea-9a2c-f1857c1a8156.JPG)
+![3](https://user-images.githubusercontent.com/19284401/68993001-72fc8800-08a5-11ea-9c8a-5b225d2b53e0.jpg)
 
-### <a name="III"><a/>III: BASIC COMMAND
+- Cài đặt git
+            
+            yum  -y install git
+             
+- Clone git
 
-### <a name=""><a/>IV: WEB GUID
+            git clone https://github.com/letran3691/openstack.git             
+
+- Phân quyền file 
+            
+            chmod +x openstack/ops.sh
+            
+- Thực thi file
+
+            ./openstack/ops.sh
+
+
+![Untitled-1](https://user-images.githubusercontent.com/19284401/68774590-ead97100-065f-11ea-8137-cb213ac6fce3.png)
+
+- Nhập các thông tin yêu cầu như hình trên thì nhấn ENTER.
+
+**_- Chú ý: Nó yêu cầu nhập password root  bên node storage và compute và NFS server thì nhớ nhập để copy key ssh nhé_**
+
+- Sau khi điền đầu đủ các thông tin trên nhấn ENTER thì lại ngồi chơi đợi quá trình cài đặt và cấu hình hoàn tất thôi. :D
+
+- Thấy cảnh báo như dưới đây thì bỏ qua, không cần quan tâm.
+
+![image](https://user-images.githubusercontent.com/19284401/68399766-7d35cc80-01a9-11ea-8d42-fc45233a0035.png)
+
+![image](https://user-images.githubusercontent.com/19284401/68776466-b1563500-0662-11ea-816a-14d4d604a781.png)
+![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
+
+
+
+### <a name="III"><a/>**III: BASIC COMMAND**
+
+### <a name=""><a/>**IV: WEB GUID**
 
 
 

@@ -1284,16 +1284,6 @@ ssh root@$compute "yum -y install nfs-utils"
 ssh root@$compute "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
 ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
 
-#####cinder compute node
-
-
-cat >> "/root/openstack/compute/nova.conf" << END
-
-[cinder]
-os_region_name = RegionOne
-
-END
-
 scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 
 ssh root@$compute "systemctl restart openstack-nova-compute"
