@@ -1155,7 +1155,6 @@ scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 ssh root@$compute "systemctl restart openstack-nova-compute"
 ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
 
-ssh root@$compute "reboot"
 
 }
 
@@ -1300,7 +1299,6 @@ scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 ssh root@$compute "systemctl restart openstack-nova-compute"
 ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
 
-ssh root@$compute "reboot"
 }
 
 
