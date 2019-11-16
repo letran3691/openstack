@@ -939,12 +939,6 @@ sleep 2
 ssh root@$storage "pvcreate /dev/"$dev"1"
 ssh root@$storage "vgcreate -s 32M vg-data /dev/"$dev"1"
 
-#size=$(ssh root@$storage "fdisk -l | grep sdb | cut -f 3 -d ' ' | cut -f 1 -d '.'")
-#
-#lvm=$(expr $size - 2)
-#
-#ssh root@$storage "lvcreate -L " $lvm"G -n lv-data vg-data"
-
 cinder_lvm="/root/openstack/storage/cinder.conf"
 sed -i "s/\#enabled_backends/enabled_backends = lvm/g" $cinder_lvm
 
@@ -988,7 +982,6 @@ printf "======================================Openstack-nova-compute============
 sleep 2
 ssh root@$compute "systemctl restart openstack-nova-compute "
 
-ssh root@$storage "reboot"
 }
 
 
@@ -1162,6 +1155,152 @@ scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 ssh root@$compute "systemctl restart openstack-nova-compute"
 ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
 
+ssh root@$compute "reboot"
+
+}
+
+
+storage_node_multi(){
+printf "======================================Node Storage multi backend===================================\n"
+
+inf_nfs=$(ssh root@$nfs_server "ls /sys/class/net/ | awk '{ if (NR == 1) print \$1}'")
+ip_nfs=$(ssh root@$nfs_server "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f1  -d'/'")
+netmask_nfs=$(ssh root@$nfs_server "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f2  -d'/'")
+route_nfs=$(ssh root@$nfs_server "route -n | head -n3 | grep 0.0 | awk '{print \$2}'")
+
+subnet_nfs=$(ssh root@$nfs_server "route -n | tail -n1 | awk '{print \$1}'")
+
+ssh root@$nfs_server "sed -i 's/BOOTPROTO=\"dhcp\"/BOOTPROTO=\"static\"/g' /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+
+ssh root@$nfs_server "echo 'IPADDR='$ip_nfs >> /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+ssh root@$nfs_server "echo 'PREFIX='$netmask_nfs >> /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+ssh root@$nfs_server "echo 'GATEWAY='$route_nfs >> /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+ssh root@$nfs_server "echo 'DNS1='8.8.8.8 >> /etc/sysconfig/network-scripts/ifcfg-$inf_nfs"
+
+ssh root@$nfs_server "yum -y install epel-release  && yum -y install nfs-utils lvm2 hwinfo"
+
+ssh root@$nfs_server "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
+ssh root@$nfs_server " echo '/volume_nfs $subnet_nfs/$netmask_nfs(rw,no_root_squash)' > /etc/exports"
+
+################################### config disk lvm
+
+printf "======================================Format partition NFS===========================================\n"
+sleep 2
+
+dev_nfs=$(ssh root@$nfs_server "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
+
+ssh root@$nfs_server "fdisk /dev/$dev_nfs <<EOF
+
+n
+p
+
+
+
+
+w
+
+EOF"
+
+printf "======================================Convert partion to lvm=============================\n"
+sleep 2
+
+ssh root@$nfs_server "fdisk /dev/$dev_nfs <<EOF
+
+t
+8e
+w
+
+EOF"
+
+printf "======================================Create group and volume data=============================\n"
+sleep 2
+ssh root@$nfs_server "pvcreate /dev/"$dev_nfs"1"
+ssh root@$nfs_server "vgcreate -s 32M vg-data /dev/"$dev_nfs"1"
+
+disk=$(ssh root@$nfs_server "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
+
+volume_zise=$(ssh root@$nfs_server "fdisk -l | sort | grep $disk |sort | tail -n1 | awk '{print \$3}' | cut -f1 -d '.'")
+
+echo $volume_zise
+
+vl=`expr $volume_zise - 4`
+
+echo $vl
+
+ssh root@$nfs_server "lvcreate -L $vl""G -n lv-data vg-data"
+ssh root@$nfs_server "mkfs -t ext4 /dev/vg-data/lv-data"
+
+ssh root@$nfs_server "mkdir /volume_nfs"
+ssh root@$nfs_server "mount /dev/vg-data/lv-data /volume_nfs"
+ssh root@$nfs_server "echo '/dev/vg-data/lv-data   /volume_nfs                   ext4            defaults 0 0' >> /etc/fstab"
+ssh root@$nfs_server "systemctl start rpcbind nfs-server && systemctl enable rpcbind nfs-server"
+
+
+printf "======================================reboot nfs server======================================\n"
+
+ssh root@$nfs_server "reboot"
+
+
+printf "======================================Config Storage Node======================================"
+
+
+ssh root@$storage "yum --enablerepo=centos-openstack-queens,epel -y install nfs-utils"
+
+ssh root@$storage "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
+cinder_lvm="/root/openstack/storage/cinder.conf"
+sed -i "s/enabled_backends = lvm/enabled_backends = lvm,nfs/g" $cinder_lvm
+
+cat >> "/root/openstack/storage/cinder.conf" << END
+
+[nfs]
+volume_driver = cinder.volume.drivers.nfs.NfsDriver
+nfs_shares_config = /etc/cinder/nfs_shares
+nfs_mount_point_base = \$state_path/mnt
+
+END
+
+
+scp /root/openstack/storage/cinder.conf root@$storage:/etc/cinder/
+
+ssh root@$storage "mkdir /volume_nfs"
+
+ssh root@$storage "echo '$nfs_server:/volume_nfs' >> /etc/cinder/nfs_shares"
+
+ssh root@$storage "mkdir /var/lib/cinder/mnt"
+ssh root@$storage "chmod 640 /etc/cinder/nfs_shares"
+ssh root@$storage "chgrp cinder /etc/cinder/nfs_shares"
+ssh root@$storage "systemctl restart openstack-cinder-volume"
+ssh root@$storage "chown -R cinder. /var/lib/cinder/mnt"
+
+ssh root@$storage "systemctl start rpcbind && systemctl enable rpcbind"
+
+
+ssh root@$storage "reboot"
+
+
+
+printf "======================================Config on Node Compute=========================================\n"
+
+ssh root@$compute "yum -y install nfs-utils"
+ssh root@$compute "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
+ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
+
+#####cinder compute node
+
+
+cat >> "/root/openstack/compute/nova.conf" << END
+
+[cinder]
+os_region_name = RegionOne
+
+END
+
+scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
+
+ssh root@$compute "systemctl restart openstack-nova-compute"
+ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
+
+ssh root@$compute "reboot"
 }
 
 
@@ -1660,6 +1799,7 @@ password: $pass_admin
 END
             printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
             printf "Install and config done, auto reboot\n"
+            ssh root@$storage "reboot"
             reboot;;
         5 )
             controller=$ip
@@ -1669,7 +1809,6 @@ END
 
             echo "Enter IP Storage node: "
             read storage
-
 
             echo "Enter IP NFS server: "
             read nfs_server
@@ -1748,8 +1887,92 @@ END
             printf "Install and config done, auto reboot\n"
             reboot;;
 
-        6 ) printf "Updating\nPlease try again later\nTHANKS!!!\n "
-            exit;;
+        6 )
+            controller=$ip
+
+            echo "Enter IP Compute node: "
+            read compute
+
+            echo "Enter IP Storage node: "
+            read storage
+
+            echo "Enter IP NFS server: "
+            read nfs_server
+
+            echo "Enter password admin: "
+            read pass_admin
+
+            userabbitmq='openstack'
+            echo "Enter passwork rabbitmq:"
+            read pass_rabbitmq
+
+            echo "Enter password root sql:"
+            read rootsql
+
+            echo "Enter password user sql:"
+            read pass_user_sql
+
+            echo "Enter password user service:"
+            read pass_project_user
+
+            printf "======================================Transfer key ssh====================================\n"
+            sleep 2
+
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$compute
+            ssh root@$compute "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$storage
+            ssh root@$storage "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$storage "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$storage "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$storage "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$nfs_server
+            ssh root@$nfs_server "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$nfs_server "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$nfs_server "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$nfs_server "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
+            br_network
+		    requirements
+	        keytone
+	        glance
+	        nova_Keystone
+	        nova_install_conf
+	        neutron_Keystone
+	        neutron_server_all
+	        horizon_install
+	        compute_node
+	        cinder_controller
+	        storage_node_lvm
+	        storage_node_multi
+	        vxlan_all
+            vxlan_com
+            key_private
+
+            cat >"info" << END
+ip controll: $controller
+ip compute: $compute
+ip storage: $storage
+ip nfs server: $nfs_server
+user: admin
+pass admin: $pass_admin
+pass root sql: $rootsql
+pass user sql: $pass_user_sql
+pass service keytone: $pass_project_user
+user RabbitMQ: openstack
+pass RabbitMQ: $pass_rabbitmq
+Link dashboard http//$controller/dashboard
+domain: default
+user: admin
+password: $pass_admin
+END
+            printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
+            printf "Install and config done, auto reboot\n"
+            reboot;;
 
 	    $(( ${#options[@]}+1 )) ) printf "Thank for use my shell\n" ; break;;
 	    *) echo "Your option wrong, Please choose again!!!";continue;;
