@@ -85,7 +85,7 @@ mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'localh
 mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'%' identified by '"$pass_user_sql"';"
 mysql -uroot -p123456 -e "flush privileges;"
 
-yum --enablerepo=centos-openstack-queens,epel -y install openstack-keystone openstack-utils python-openstackclient httpd mod_wsgi
+yum --enablerepo=centos-openstack-queens,epel -y install openstack-keystone openstack-utils python-openstackclient httpd mod_wsgi wget
 
 #vi /etc/keystone/keystone.conf
 token_conf='/etc/keystone/keystone.conf'

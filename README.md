@@ -344,6 +344,142 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
 
 ### <a name="III"><a/>**III: BASIC COMMAND**
 
+- Create project
+            
+            openstack project create --domain default --description "demo Project" demo
+- Show project 
+
+            openstack project list 
+- download disk image
+
+            wget http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img -O /var/lib/glance/images/cirros.img
+- Add virtual image to glance
+
+             openstack image create "cirros" --file /var/lib/glance/images/cirros.img --disk-format qcow2 --container-format bare --public
+- Show virtual image
+
+            openstack image list
+- Create user
+
+            openstack user create --domain default --project demo --password 12345 demo     
+- Show user 
+
+            openstack user list 
+- Create role
+
+            openstack role create demo
+- Add user to role
+
+            openstack role add --project demo --user demo  demo
+- Add flavor
+            
+            openstack flavor create --id 0 --vcpus 1 --ram 512 --disk 10 test
+- Show flavor
+
+            openstack flavor list
+- Create virtual router
+
+            openstack router create router01    
+- Show router
+
+             openstack router list   
+- Create internal network
+
+            openstack network create internal --provider-network-type vxlan 
+- Create subnet in internal network
+
+            openstack subnet create sub-inter --network internal --subnet-range 10.0.0.0/24 --gateway 10.0.0.1 --dns-nameserver 8.8.8.8
+- Create external network
+    
+            openstack network create --provider-physical-network physnet1 --provider-network-type flat --external external
+- Create subnet in external network
+
+            openstack subnet create sub-exter --network external --subnet-range 192.168.124.0/24 --allocation-pool start=192.168.124.200,end=192.168.124.254 --gateway 192.168.124.2 --dns-nameserver 8.8.8.8 --no-dhcp
+    - Chú ý: Kiểm tra kĩ lại network sao cho subnet trùng với lớp mạng trên **ADAPTER2**   
+    
+- Create rbac    
+
+            openstack network rbac create --target-project admin --type network --action access_as_shared internal    
+- Show network
+
+            openstack network list    
+- Set internal network to router
+            
+            openstack router add subnet router01 sub-inter                                                            
+- Set gateway to the router
+
+            openstack router set router01 --external-gateway external
+- Create a security group for instances
+
+            openstack security group create secgroup01
+- Show security group
+
+             openstack security group list            
+            
+- Create key ssh to instance
+            
+            ssh-keygen -q -N ""                   
+- Add public key
+
+            openstack keypair create --public-key ~/.ssh/id_rsa.pub mykey           
+- Create instance
+
+            openstack server create --flavor test --image cirros --security-group secgroup01 --network internal --key-name mykey cirros_test
+            
+- Assign floating IP to Instance    
+
+            openstack floating ip create external 
+- Add floating ip to
+
+ ![image](https://user-images.githubusercontent.com/19284401/69009997-4459dc80-098d-11ea-8310-aaf152174db5.png)
+ 
+   - **_Chú ý cái ip nhé_**
+
+            openstack server add floating ip  cirros_test 192.168.124.215
+- Comfirm setting
+
+            openstack floating ip show 192.168.124.215
+- Show instance
+
+            openstack server list
+            
+- Add rorulele to security group
+
+    - permit ICMP
+
+            openstack security group rule create --protocol icmp --ingress secgroup01
+            
+    permit SSH
+    
+            openstack security group rule create --protocol tcp --dst-port 22:22 secgroup01
+            
+- Show rule security group
+    
+            openstack security group rule list  
+- Volume            
+    
+    - **_Chú ý: chỉ up dụng với LAB có cấu hình Storage node_**                
+                
+    - Create volume
+    
+                 openstack volume create --size 6 disk01
+    - Show volume
+    
+                openstack volume list
+    - Add volume to instace
+    
+                openstack server add volume  cirros_test disk01 
+                
+     ![image](https://user-images.githubusercontent.com/19284401/69010552-766e3d00-0993-11ea-9382-a0fb8ea172d5.png)
+           
+                
+                                                              
+            
+- ssh to instance
+
+            ssh cirros@192.168.124.215                                                
+                                
+
 ### <a name=""><a/>**IV: WEB GUID**
 
 
