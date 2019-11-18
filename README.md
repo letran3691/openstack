@@ -232,15 +232,6 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(LVM backend)**
 ![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
 
 
-<!--
-title: dashboard 3 NODE CONTROLL-NETWORK-COMPUTE
-author: Trunglv
--->
-- Link hướng dẫn tạo volume và attach volume trên dashboard (click vào ảnh phía dưới).
-
-[![Tạo volume và attach trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://youtu.be/6MngoLDlWYQ)
-
-
 ### <a name="2.5"><a/>**3 NODE (CONTROLLER-COMPUTE-STORACE(NFS backend))**
 
 _**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
@@ -481,6 +472,15 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
                                 
 
 ### <a name=""><a/>**IV: WEB GUID**
+
+
+<!--
+title: Dashboard 
+author: Trunglv
+-->
+- Link hướng dẫn trên dashboard (click vào ảnh phía dưới).
+
+[![Hướng dẫn trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://youtu.be/D597lhzCmkc)
 
 
 
