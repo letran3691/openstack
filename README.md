@@ -471,9 +471,7 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
             ssh cirros@192.168.124.215                                                
                                 
 
-### <a name=""><a/>**IV: WEB GUID**
-
-
+### <a name="IV"><a/>**IV: WEB GUID**
 <!--
 title: Dashboard 
 author: Trunglv
