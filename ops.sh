@@ -940,7 +940,7 @@ ssh root@$storage "pvcreate /dev/"$dev"1"
 ssh root@$storage "vgcreate -s 32M vg-data /dev/"$dev"1"
 
 cinder_lvm="/root/openstack/storage/cinder.conf"
-sed -i "s/\#enabled_backends/enabled_backends = lvm/g" $cinder_lvm
+sed -i "s/\#enabled_backends/enabled_backends = lvm\n#backup_volume/g" $cinder_lvm
 
 cat >> "/root/openstack/storage/cinder.conf" << END
 
@@ -1181,6 +1181,7 @@ ssh root@$nfs_server "yum -y install epel-release  && yum -y install nfs-utils l
 ssh root@$nfs_server "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
 ssh root@$nfs_server " echo '/volume_nfs $subnet_nfs/$netmask_nfs(rw,no_root_squash)' > /etc/exports"
 
+
 ################################### config disk lvm
 
 printf "======================================Format partition NFS===========================================\n"
@@ -1232,6 +1233,61 @@ ssh root@$nfs_server "mkfs -t ext4 /dev/vg-data/lv-data"
 ssh root@$nfs_server "mkdir /volume_nfs"
 ssh root@$nfs_server "mount /dev/vg-data/lv-data /volume_nfs"
 ssh root@$nfs_server "echo '/dev/vg-data/lv-data   /volume_nfs                   ext4            defaults 0 0' >> /etc/fstab"
+
+
+printf "====================================Format partition volume backup======================================\n"
+
+dev_nfs2=$(ssh root@$nfs_server "hwinfo --block --short | head -n4 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
+
+
+ssh root@$nfs_server "fdisk /dev/$dev_nfs2 <<EOF
+
+n
+p
+
+
+
+
+w
+
+EOF"
+
+printf "======================================Convert partion to lvm=============================\n"
+sleep 2
+
+ssh root@$nfs_server "fdisk /dev/$dev_nfs2 <<EOF
+
+t
+8e
+w
+
+EOF"
+
+printf "======================================Create group and volume backup=============================\n"
+sleep 2
+ssh root@$nfs_server "pvcreate /dev/"$dev_nfs2"1"
+ssh root@$nfs_server "vgcreate -s 32M vg-backup /dev/"$dev_nfs2"1"
+
+disk2=$(ssh root@$nfs_server "hwinfo --block --short | head -n4 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
+
+volume_zise2=$(ssh root@$nfs_server "fdisk -l | sort | grep $disk2 |sort | tail -n1 | awk '{print \$3}' | cut -f1 -d '.'")
+
+echo $volume_zise2
+
+vl2=`expr $volume_zise2 - 4`
+
+echo $vl2
+
+ssh root@$nfs_server "lvcreate -L $vl2""G -n lv-backup vg-backup"
+ssh root@$nfs_server "mkfs -t ext4 /dev/vg-backup/lv-backup"
+
+ssh root@$nfs_server "mkdir /volume_backup"
+ssh root@$nfs_server "mount /dev/vg-backup/lv-backup /volume_backup"
+ssh root@$nfs_server "echo '/dev/vg-backup/lv-backup   /volume_backup                   ext4            defaults 0 0' >> /etc/fstab"
+
+ssh root@$nfs_server " echo '/volume_backup $subnet_nfs/$netmask_nfs(rw,no_root_squash)' >> /etc/exports"
+
+
 ssh root@$nfs_server "systemctl start rpcbind nfs-server && systemctl enable rpcbind nfs-server"
 
 
@@ -1259,19 +1315,30 @@ nfs_mount_point_base = \$state_path/mnt
 END
 
 
+cinder_backup="/root/openstack/storage/cinder.conf"
+sed -i "s/\#backup_volume/backup_driver = cinder.backup.drivers.nfs\nbackup_mount_point_base = \$state_path\/backup_nfs\nbackup_share = $nfs_server:\/volume_backup/g" $cinder_backup
+
+#ssh root@$nfs_server " echo '/volume_backup $subnet_nfs/$netmask_nfs(rw,no_root_squash)' >> /etc/exports"
+
+
 scp /root/openstack/storage/cinder.conf root@$storage:/etc/cinder/
 
 ssh root@$storage "mkdir /volume_nfs"
 
 ssh root@$storage "echo '$nfs_server:/volume_nfs' >> /etc/cinder/nfs_shares"
 
+ssh root@$storage "echo '$nfs_server:/volume_backup' >> /etc/cinder/nfs_shares"
+
 ssh root@$storage "mkdir /var/lib/cinder/mnt"
 ssh root@$storage "chmod 640 /etc/cinder/nfs_shares"
 ssh root@$storage "chgrp cinder /etc/cinder/nfs_shares"
 ssh root@$storage "systemctl restart openstack-cinder-volume"
 ssh root@$storage "chown -R cinder. /var/lib/cinder/mnt"
+ssh root@$storage "mkdir /var/lib/cinder/backup_nfs"
+ssh root@$storage "chown -R cinder. /var/lib/cinder/backup_nfs"
 
 ssh root@$storage "systemctl start rpcbind && systemctl enable rpcbind"
+ssh root@$storage "systemctl start openstack-cinder-backup && systemctl enable openstack-cinder-backup"
 
 
 ssh root@$storage "reboot"
@@ -1288,6 +1355,7 @@ scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 
 ssh root@$compute "systemctl restart openstack-nova-compute"
 ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
+
 
 }
 

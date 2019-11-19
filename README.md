@@ -333,7 +333,8 @@ _**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
 Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
 
 ![image](https://user-images.githubusercontent.com/19284401/68823250-c912d500-06c5-11ea-8020-762ffd33abe3.png)
-![3](https://user-images.githubusercontent.com/19284401/68993001-72fc8800-08a5-11ea-9c8a-5b225d2b53e0.jpg)
+![3](https://user-images.githubusercontent.com/19284401/69163730-4e144900-0b21-11ea-9839-72e2ac3c425d.jpg)
+
 
 - Cài đặt git
             
