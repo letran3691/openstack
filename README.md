@@ -18,7 +18,7 @@
 
 ### [III: BASIC COMMAND](#III)
 
-### [IV: WEB GUID ](#IV)
+### [IV: WEB GUID HORIZON ](#IV)
 
 ### [V: Hỗ trợ ](#V)
 
@@ -506,7 +506,7 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
             ssh cirros@192.168.124.215                                                
                                 
 
-### <a name="IV"><a/>**IV: WEB GUID**
+### <a name="IV"><a/>**IV: WEB GUID HORIZON**
 <!--
 title: Dashboard 
 author: Trunglv
