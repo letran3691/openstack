@@ -58,7 +58,7 @@
 
 <a href="http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img" rel="nofollow">Cirros dowload.<a>
 
-Chú ý: Script chỉ chạy trên centos7 (dựng LAB trên vmware workstation, KVM đều chạy được, đã test thực tế)
+**Chú ý: Script chỉ chạy trên centos7 (dựng LAB trên vmware workstation, KVM đều chạy được, đã test thực tế)**
 
 ### <a name="2.1"><a/>**1 NODE (ALL IN ONE)**
 
