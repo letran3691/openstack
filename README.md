@@ -353,7 +353,8 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
             ./openstack/ops.sh
 
 
-![Untitled-1](https://user-images.githubusercontent.com/19284401/68774590-ead97100-065f-11ea-8137-cb213ac6fce3.png)
+![image](https://user-images.githubusercontent.com/19284401/69115294-a06e4f00-0aba-11ea-9263-e1ed0e2ace1f.png)
+
 
 - Nhập các thông tin yêu cầu như hình trên thì nhấn ENTER.
 
