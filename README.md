@@ -18,7 +18,44 @@
 
 ### [III: BASIC COMMAND](#III)
 
-### [III: WEB GUID ](#IV)
+### [IV: WEB GUID ](#IV)
+
+### [V: Hỗ trợ ](#V)
+
+
+### <a name="I"><a/>**I GIỚI THIỆU**
+
+- Là một IT  chắc các bạn cũng đã nghe qua các cum từ Ảo Hóa (Virtualization) và Điện toán đám mây (Cloud Computing). Vậy Ảo Hóa là gì, điện toán đám mây là gì.
+ 
+- Ảo hóa (Virtualization) 
+
+    - Đa số khi nói đến Virtualization thì mọi người đều hiểu là Ảo hóa. Ảo hóa là kỹ thuật tạo ra phần cứng, thiết bị  mạng, thiết bị lưu trữ,… ảo – không có thật (cũng có thể là giả lập hoặc mô phỏng).
+    
+    - Đi kèm với Ảo hóa thường có các cụm từ Hardware Virtualization, Platform Virtualization: các cụm từ này ám chỉ việc tạo ra các thành phần phần cứng (ảo) để tạo ra các máy ảo (Virtual Machine), chúng gần như có đầy đủ các thành phần như máy vật lý (physical machine ) và có thể cài đặt hệ điều hành (Linux, Windows,….) trong network thì có thể có các Router ảo và Switch ảo.
+    
+- Cloud Computing
+
+    -  Điện toán đám mây (Cloud Computing) theo định nghĩa của IBM là việc cung cấp các tài nguyên máy tính cho người dùng tùy theo mục đích sử dụng thông qua kết nối Internet. Nguồn tài nguyên đó có thể là bất kì thứ gì liên quan đến điện toán và máy tính, ví dụ như phần mềm, phần cứng, hạ tầng mạng cho đến các máy chủ và mạng lưới máy chủ cỡ lớn.
+    
+- Openstack là gì.
+
+    - OpenStack là một phần mềm mã nguồn mở, dùng để triển khai Cloud Computing, bao gồm private cloud và public cloud (nhiều tài liệu giới thiệu là Cloud Operating System). Đúng như với thông tin từ trang chủ http://openstack.org, xin được trích lại như sau:  Open source software for building private and public clouds.
+    
+    - Các thành phần chính (Openstack Queens):
+    
+        - Identity Service(Keystone): Quản lý xác thực cho user và projects.
+        - Compute Service(Nova): Quản lý máy ảo
+        - Image Service(Glance): Là OpenStack Image Service, quản lý các disk image ảo. Glance hỗ trợ các ảnh Raw, Hyper-V (VHD), VirtualBox (VDI), Qemu (qcow2) và VMWare (VMDK, OVF). Bạn có thể thực hiện: cập nhật thêm các virtual disk images, cấu hình các public và private image và điều khiển việc truy cập vào chúng, và tất nhiên là có thể tạo và xóa chúng.
+        - Dashboard(Horizon): Cung cấp cho người quản trị cũng như người dùng giao diện đồ họa để truy cập, cung cấp và tự động tài nguyên cloud. Việc thiết kế có thể mở rộng giúp dễ dàng thêm vào các sản phẩm cũng như dịch vụ ngoài như billing, monitoring và các công cụ giám sát khác.
+        - Object Storage(Swift): Là nền tảng lưu trữ mạnh mẽ, có khả năng mở rộng và chịu lỗi cao, được thiết kế để lưu trữ một lượng lớn dữ liệu phi cấu trúc với chi phí thấp thông qua một http RESTful API.
+        - Block Storage(Cinder): Cung cấp dịch vụ Block Storage. Một cách ngắn gọn, Cinder thực hiện ảo hóa pool các khối thiết bị lưu trữ và cung cấp cho người dùng cuối API để request và sử dụng tài nguyên mà không cần biết khối lưu trữ của họ thực sự lưu trữ ở đâu và loại thiết bị là gì. Cũng như các dịch vụ khác trong OpenStack, self service API được sử dụng để tương tác với dịch vụ Cinder.
+        - Network Service(Neutron): Là thành phần quản lý network cho các máy ảo. Cung cấp chức năng network as a service. Đây là hệ thống có các tính chất pluggable, scalable và API-driven.
+        - Orchestration Service(Heat): Cung cấp chức năng điều phối cho máy ảo
+        - Metering Service(Ceilometer): Cung cấp cở sở hạ tầng để thu thập mọi thông tin cần thiết liên quan tới OpenStack
+        - Database Service(Trove):Là dịch vụ cho phép người dùng sử dụng database quan hệ hoặc phi quan hệ (Relational database và Non-Relational database - NoSQL) mà không cần quan tâm tới hạ tầng database. Nó tạo ra lớp abstract giữa người dùng và database, thực hiện dự phòng, mở rộng và quản lý database trên hạ tầng OpenStack.   
+        - ....
+        
+
 
 
 
@@ -463,9 +500,7 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
                 
      ![image](https://user-images.githubusercontent.com/19284401/69010552-766e3d00-0993-11ea-9382-a0fb8ea172d5.png)
            
-                
-                                                              
-            
+                       
 - ssh to instance
 
             ssh cirros@192.168.124.215                                                
@@ -481,4 +516,5 @@ author: Trunglv
 [![Hướng dẫn trên dashboard ](https://user-images.githubusercontent.com/19284401/68360778-eab70e00-0153-11ea-908b-059ce43982bf.png)](https://youtu.be/D597lhzCmkc)
 
 
-
+### <a name="V"><a/>**V: HỖ TRỢ**
+#### Liên hệ: <a href="https://www.facebook.com/trunglv.91" rel="nofollow">Facebook<a>.
