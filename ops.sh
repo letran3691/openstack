@@ -1360,6 +1360,13 @@ ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
 }
 
 
+storage_ceph(){
+
+printf "======================================Config Storage CEPH backend"
+
+}
+
+
 
 horizon_install(){
 printf "======================================Horizon_install===========================================\n"
@@ -1578,7 +1585,7 @@ sleep 2
 source /root/keystonerc && openstack keypair create --public-key /root/.ssh/id_rsa.pub mykey
 }
 
-options=("INSTALL 1 NODE ALL IN ONE" "INSTALL 2 NODE (CONTROLLER-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-NETWORK-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" ) # End Options
+options=("INSTALL 1 NODE ALL IN ONE" "INSTALL 2 NODE (CONTROLLER-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-NETWORK-COMPUTE)" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(LVM-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(NFS-BackEnds))" "INSTALL 3 NODE (CONTROLLER-COMPUTE-STORAGE(Multi-BackEnds))" "INSTALL 2 NODE (CONTROLLER-COMPUTE(CEPH-BackEnds))" ) # End Options
 
 printf "==============================================================================================\n"
 printf "                                  Menu\n"
@@ -2014,6 +2021,80 @@ ip controll: $controller
 ip compute: $compute
 ip storage: $storage
 ip nfs server: $nfs_server
+user: admin
+pass admin: $pass_admin
+pass root sql: $rootsql
+pass user sql: $pass_user_sql
+pass service keytone: $pass_project_user
+user RabbitMQ: openstack
+pass RabbitMQ: $pass_rabbitmq
+Link dashboard http//$controller/dashboard
+domain: default
+user: admin
+password: $pass_admin
+END
+            printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
+            printf "Install and config done, auto reboot\n"
+            reboot;;
+
+
+
+       7 )
+             printf "Updating. Please try again"
+
+             exit
+
+            controller=$ip
+
+            echo "Enter IP Compute node: "
+            read compute
+
+            echo "Enter password admin: "
+            read pass_admin
+
+            userabbitmq='openstack'
+            echo "Enter passwork rabbitmq:"
+            read pass_rabbitmq
+
+            echo "Enter password root sql:"
+            read rootsql
+
+            echo "Enter password user sql:"
+            read pass_user_sql
+
+            echo "Enter password user service:"
+            read pass_project_user
+
+            printf "======================================Transfer key ssh====================================\n"
+            sleep 2
+
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$compute
+            ssh root@$compute "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
+
+
+            br_network
+		    requirements
+	        keytone
+	        glance
+	        nova_Keystone
+	        nova_install_conf
+	        neutron_Keystone
+	        neutron_server_all
+	        horizon_install
+	        compute_node
+	        cinder_controller
+            storage_ceph
+	        vxlan_all
+            vxlan_com
+            key_private
+
+            cat >"info" << END
+ip controll: $controller
+ip compute: $compute
 user: admin
 pass admin: $pass_admin
 pass root sql: $rootsql
