@@ -2,6 +2,15 @@
 
 ip=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f1  -d'/')
 netmask=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f2  -d'/')
+network=$(route -n | sort | tail -n5 | head -n1 | awk '{print $1}')
+
+echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf
+echo "net.ipv6.conf.default.disable_ipv6 = 1"  >> /etc/sysctl.conf
+sysctl -p
+
+sed -i 's/\#AddressFamily any/AddressFamily inet/g' /etc/ssh/sshd_config
+
+systemctl restart sshd
 
 
 br_network(){
@@ -833,6 +842,8 @@ transport_url = rabbit://openstack:$pass_rabbitmq@$controller
 [database]
 connection = mysql+pymysql://cinder:$pass_user_sql@$controller/cinder
 
+#Glance_connection_info
+
 # Keystone auth info
 [keystone_authtoken]
 www_authenticate_uri = http://$controller:5000/v3/
@@ -854,10 +865,12 @@ END
 chmod 640 /etc/cinder/cinder.conf  && chgrp cinder /etc/cinder/cinder.conf
 printf "======================================Sync db cinder============================================\n"
 sleep 2
+
 su -s /bin/bash cinder -c "cinder-manage db sync"
 
 printf "======================================Restart and enable service=================================\n"
 sleep 2
+
 systemctl start openstack-cinder-api openstack-cinder-scheduler
 systemctl enable openstack-cinder-api openstack-cinder-scheduler
 
@@ -909,6 +922,7 @@ ssh root@$storage "systemctl start openstack-cinder-volume  && systemctl enable 
 
 printf "======================================Format partition===========================================\n"
 sleep 2
+
 dev=$(ssh root@$storage "hwinfo --block --short | head -n3 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
 
 ssh root@$storage "fdisk /dev/$dev <<EOF
@@ -936,6 +950,7 @@ EOF"
 
 printf "======================================Create group and volume data=============================\n"
 sleep 2
+
 ssh root@$storage "pvcreate /dev/"$dev"1"
 ssh root@$storage "vgcreate -s 32M vg-data /dev/"$dev"1"
 
@@ -964,6 +979,7 @@ echo "export OS_VOLUME_API_VERSION=2" >> /root/keystonerc
 
 printf "======================================Restart cinder-volume service=============================\n"
 sleep 2
+
 ssh root@$storage "systemctl restart openstack-cinder-volume "
 
 #####cinder compute node
@@ -980,6 +996,7 @@ scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 
 printf "======================================Openstack-nova-compute===================================\n"
 sleep 2
+
 ssh root@$compute "systemctl restart openstack-nova-compute "
 
 }
@@ -987,6 +1004,7 @@ ssh root@$compute "systemctl restart openstack-nova-compute "
 
 storage_node_nfs(){
 printf "======================================Node Storage nfs backend===================================\n"
+sleep 3
 
 inf_nfs=$(ssh root@$nfs_server "ls /sys/class/net/ | awk '{ if (NR == 1) print \$1}'")
 ip_nfs=$(ssh root@$nfs_server "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f1  -d'/'")
@@ -1039,6 +1057,7 @@ EOF"
 
 printf "======================================Create group and volume data=============================\n"
 sleep 2
+
 ssh root@$nfs_server "pvcreate /dev/"$dev_nfs"1"
 ssh root@$nfs_server "vgcreate -s 32M vg-data /dev/"$dev_nfs"1"
 
@@ -1062,11 +1081,13 @@ ssh root@$nfs_server "systemctl start rpcbind nfs-server && systemctl enable rpc
 
 
 printf "======================================reboot nfs server=====================================\n"
+sleep 3
 
 ssh root@$nfs_server "reboot"
 
 
 printf "======================================Config on Node Storage=====================================\n"
+sleep 3
 
 inf_sto=$(ssh root@$storage "ls /sys/class/net/ | awk '{ if (NR == 1) print \$1}'")
 ip_sto=$(ssh root@$storage "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f1  -d'/'")
@@ -1097,6 +1118,7 @@ ssh root@$storage "chmod 640 /etc/cinder/cinder.conf && chgrp cinder /etc/cinder
 
 printf "======================================Start and enable service cinder===========================\n"
 sleep 2
+
 ssh root@$storage "systemctl start openstack-cinder-volume  && systemctl enable openstack-cinder-volume"
 
 ssh root@$storage "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
@@ -1135,6 +1157,7 @@ ssh root@$storage "reboot"
 
 
 printf "======================================Config on Node Compute=========================================\n"
+sleep 3
 
 ssh root@$compute "yum -y install nfs-utils"
 ssh root@$compute "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
@@ -1161,6 +1184,7 @@ ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
 
 storage_node_multi(){
 printf "======================================Node Storage multi backend===================================\n"
+sleep 3
 
 inf_nfs=$(ssh root@$nfs_server "ls /sys/class/net/ | awk '{ if (NR == 1) print \$1}'")
 ip_nfs=$(ssh root@$nfs_server "ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print \$2}' | cut -f1  -d'/'")
@@ -1214,6 +1238,7 @@ EOF"
 
 printf "======================================Create group and volume data=============================\n"
 sleep 2
+
 ssh root@$nfs_server "pvcreate /dev/"$dev_nfs"1"
 ssh root@$nfs_server "vgcreate -s 32M vg-data /dev/"$dev_nfs"1"
 
@@ -1236,6 +1261,7 @@ ssh root@$nfs_server "echo '/dev/vg-data/lv-data   /volume_nfs                  
 
 
 printf "====================================Format partition volume backup======================================\n"
+sleep 3
 
 dev_nfs2=$(ssh root@$nfs_server "hwinfo --block --short | head -n4 | tail -n1 | awk '{print \$1}' | cut -f3 -d '/'")
 
@@ -1292,12 +1318,13 @@ ssh root@$nfs_server "systemctl start rpcbind nfs-server && systemctl enable rpc
 
 
 printf "======================================reboot nfs server======================================\n"
+sleep 3
 
 ssh root@$nfs_server "reboot"
 
 
 printf "======================================Config Storage Node======================================"
-
+sleep 3
 
 ssh root@$storage "yum --enablerepo=centos-openstack-queens,epel -y install nfs-utils"
 
@@ -1340,12 +1367,10 @@ ssh root@$storage "chown -R cinder. /var/lib/cinder/backup_nfs"
 ssh root@$storage "systemctl start rpcbind && systemctl enable rpcbind"
 ssh root@$storage "systemctl start openstack-cinder-backup && systemctl enable openstack-cinder-backup"
 
-
 ssh root@$storage "reboot"
 
-
-
 printf "======================================Config on Node Compute=========================================\n"
+sleep 3
 
 ssh root@$compute "yum -y install nfs-utils"
 ssh root@$compute "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
@@ -1356,16 +1381,325 @@ scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
 ssh root@$compute "systemctl restart openstack-nova-compute"
 ssh root@$compute "systemctl start rpcbind && systemctl enable rpcbind"
 
-
 }
 
 
 storage_ceph(){
 
-printf "======================================Config Storage CEPH backend"
+printf "======================================Config Storage CEPH backend================================\n"
+sleep 3
+
+yum --enablerepo=centos-openstack-queens,epel -y install openstack-cinder python2-crypto targetcli
+
+cinder_ceph="/etc/cinder/cinder.conf"
+sed -i "s/\#Glance_connection_info/glance_api_servers = http:\/\/$ip:9292/g" $cinder_ceph
+
+cat >> "/etc/nova/nova.conf" << END
+
+# add to the end
+[cinder]
+os_region_name = RegionOne
+
+END
+
+printf "======================================restart cinder================================\n"
+sleep 3
+
+systemctl start openstack-cinder-volume && systemctl enable openstack-cinder-volume
+systemctl restart openstack-nova-compute openstack-nova-api openstack-cinder-scheduler openstack-cinder-volume
+
+
+cat >> "/root/openstack/compute/nova.conf" << END
+
+# add to the end
+[cinder]
+os_region_name = RegionOne
+
+END
+
+scp /root/openstack/compute/nova.conf root@$compute:/etc/nova/
+ssh root@$compute "systemctl restart openstack-nova-compute"
+
+echo "export OS_VOLUME_API_VERSION=2" >> /root/keystonerc
+
+
+printf "======================================Install Ceph* on control-compute nodes==========================\n"
+sleep 3
+
+rpm -Uvh https://download.ceph.com/rpm-mimic/el7/noarch/ceph-release-1-1.el7.noarch.rpm
+yum -y install python-rbd ceph-common ceph-deploy python2-pip
+
+ssh root@$compute "rpm -Uvh https://download.ceph.com/rpm-mimic/el7/noarch/ceph-release-1-1.el7.noarch.rpm"
+ssh root@$compute "yum -y install python-rbd ceph-common"
+
+ssh root@$ceph1 "yum -y install epel-release && yum -y install hwinfo"
+ssh root@$ceph2 "yum -y install epel-release && yum -y install hwinfo"
+
+host_con=$(cat /etc/hostname)
+host_com=$(ssh root@$compute "cat /etc/hostname")
+host_osp1=$(ssh root@$ceph1 "cat /etc/hostname")
+host_osp2=$(ssh root@$ceph2 "cat /etc/hostname")
+
+
+cat >> "/etc/hosts" << END
+
+$control    $host_con
+$compute    $host_com
+$ceph1      $host_osp1
+$ceph2      $host_osp2
+
+END
+
+scp /etc/hosts root@$compute:/etc/
+scp /etc/hosts root@$ceph1:/etc/
+scp /etc/hosts root@$ceph2:/etc/
+
+
+cat >> "/root/.ssh/config" << END
+Host $host_con
+   Hostname $host_con
+   User root
+END
+
+
+chmod 644 /root/.ssh/config
+
+printf "======================================Config Ceph======================================\n"
+sleep 3
+
+mkdir ceph_cluster
+cd ceph_cluster/ && ceph-deploy new $host_con
+
+cat >> "/root/ceph_cluster/ceph.conf" << END
+
+mon_allow_pool_delete = true
+public network = $network/$netmask
+
+END
+
+cd /root/ceph_cluster/ && ceph-deploy install $host_con $host_osp1 $host_osp2
+cd /root/ceph_cluster/ && ceph-deploy mon create-initial
+
+printf "======================================Format Disk======================================\n"
+sleep 3
+ceph-deploy admin $host_con $host_osp1 $host_osp2
+
+ceph1_disk=$(ssh root@$ceph1 "hwinfo --block --short | grep sd | head -n4 | tail -n3 | awk '{print \$1}'")
+
+ceph2_disk=$(ssh root@$ceph2 "hwinfo --block --short | grep sd | head -n4 | tail -n3 | awk '{print \$1}'")
+
+
+
+for disk1 in $ceph1_disk; do
+cd /root/ceph_cluster/ && ceph-deploy disk zap $host_osp1 $disk1
+done
+
+for disk2 in $ceph2_disk; do
+cd /root/ceph_cluster/ && ceph-deploy disk zap $host_osp2 $disk2
+done
+
+
+printf "====================================== Add OSD disks to Cluster======================================\n"
+sleep 3
+
+for disk1 in $ceph1_disk; do
+cd /root/ceph_cluster/ && ceph-deploy osd create --data $disk1 $host_osp1
+done
+
+for disk1 in $ceph1_disk; do
+cd /root/ceph_cluster/ && ceph-deploy osd create --data $disk2 $host_osp2
+done
+
+printf "====================================== Create Pool====================================\n"
+sleep 3
+
+cd /root/ceph_cluster/ && ceph osd pool create backups 64
+cd /root/ceph_cluster/ && ceph osd pool set backups size 2
+while [ $(ceph -s | grep creating -c) -gt 0 ]; do echo -n .;sleep 1; done
+
+cd /root/ceph_cluster/ && ceph osd pool create volumes 128
+cd /root/ceph_cluster/ && ceph osd pool set volumes size 2
+while [ $(ceph -s | grep creating -c) -gt 0 ]; do echo -n .;sleep 1; done
+
+cd /root/ceph_cluster/ && ceph osd pool create vms 32
+cd /root/ceph_cluster/ && ceph osd pool set vms size 2
+while [ $(ceph -s | grep creating -c) -gt 0 ]; do echo -n .;sleep 1; done
+
+cd /root/ceph_cluster/ && ceph osd pool create images 32
+cd /root/ceph_cluster/ && ceph osd pool set images size 2
+while [ $(ceph -s | grep creating -c) -gt 0 ]; do echo -n .;sleep 1; done
+
+
+cd /root/ceph_cluster/ && ceph-deploy mon create-initial
+cd /root/ceph_cluster/ && ceph-deploy admin $host_con $host_com $host_osp1 $host_osp2
+cd /root/ceph_cluster/ && ceph-deploy mgr create $host_con
+
+##del pool
+########### ceph osd pool delete {pool-name} [{pool-name} --yes-i-really-really-mean-it]
+printf "======================================enbale dashboard======================================\n"
+sleep 7
+### enable dashboard
+cd /root/ceph_cluster/ ; ceph mgr module enable dashboard
+### show module enabled
+cd /root/ceph_cluster/ ; ceph mgr module ls
+### set user login dashboard
+cd /root/ceph_cluster/ ; ceph dashboard set-login-credentials admin  $pass_admin
+### make ssl
+cd /root/ceph_cluster/ ; ceph dashboard create-self-signed-cert
+
+printf "======================================Create volume======================================\n"
+cd /root/ceph_cluster/ && rbd pool init volumes
+cd /root/ceph_cluster/ && rbd pool init vms
+cd /root/ceph_cluster/ && rbd pool init images
+cd /root/ceph_cluster/ && rbd pool init backups
+
+
+printf "======================================Config backend for Glance-Images======================================\n"
+sleep 3
+
+cd /root/ceph_cluster/ && ceph auth get-or-create client.glance mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=images' > ceph.client.glance.keyring
+cd /root/ceph_cluster/ && ceph auth get-or-create client.glance | tee /etc/ceph/ceph.client.glance.keyring
+chown glance:glance /etc/ceph/ceph.client.glance.keyring
+chmod 0640 /etc/ceph/ceph.client.glance.keyring
+
+sed -i "s/\[DEFAULT\]/\[DEFAULT\]\n\nshow_image_direct_url = True/g" /etc/glance/glance-api.conf
+
+sed -i 's/\[glance_store\]/\[glance_store\]\n\ndefault_store = rbd\nstores = file,http,rbd\nrbd_store_pool = images\nrbd_store_user = glance\nrbd_store_ceph_conf = \/etc\/ceph\/ceph.conf\nrbd_store_chunk_size = 8\n\n/g' /etc/glance/glance-api.conf
+
+#sed -i 's/stores = file,http/\#stores = file,http/g' /etc/glance/glance-api.conf
+sed -i 's/default_store = file/\#default_store = file/g' /etc/glance/glance-api.conf
+sed -i 's/filesystem_store_datadir = \/var\/lib\/glance\/images\//#filesystem_store_datadir = \/var\/lib\/glance\/images\//g' /etc/glance/glance-api.conf
+
+
+wget http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img -O /root/cirros.img
+
+source /root/keystonerc && openstack image create "cirros-ceph" --file /root/cirros.img --disk-format qcow2 --container-format bare --public
+
+rbd -p images ls
+
+printf "======================================Config backend cinder-Volume and Cinder-backup=======================\n"
+sleep 3
+
+cd /root/ceph_cluster/ ;  ceph auth get-or-create client.cinder mon 'allow r, allow command "osd blacklist", allow command "blacklistop"' osd 'allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rwx pool=images' > ceph.client.cinder.keyring
+cd /root/ceph_cluster/ ; ceph auth get-or-create client.cinder-backup mon 'profile rbd' osd 'profile rbd pool=backups' > ceph.client.cinder-backup.keyring
+
+
+################################control
+cd /root/ceph_cluster/ ; ceph auth get-or-create client.cinder | tee /etc/ceph/ceph.client.cinder.keyring
+cd /root/ceph_cluster/ ; ceph auth get-or-create client.cinder-backup | tee /etc/ceph/ceph.client.cinder-backup.keyring
+ceph auth get-key client.cinder |  tee /root/client.cinder
+
+################################compute
+
+cd /root/ceph_cluster/ ; ceph auth get-or-create client.cinder | ssh $host_com tee /etc/ceph/ceph.client.cinder.keyring
+cd /root/ceph_cluster/ ; ceph auth get-key client.cinder | ssh $host_com tee /root/client.cinder
+chown cinder:cinder /etc/ceph/ceph.client.cinder*
+chmod 0640 /etc/ceph/ceph.client.cinder*
+
+uuid1=`uuidgen`
+
+cat > /root/ceph-secret1.xml <<EOF
+<secret ephemeral='no' private='no'>
+<uuid>$uuid1</uuid>
+<usage type='ceph'>
+	<name>client.cinder secret</name>
+</usage>
+</secret>
+EOF
+
+virsh secret-define --file /root/ceph-secret1.xml
+virsh secret-set-value --secret $uuid1 --base64 $(cat /root/client.cinder)
+
+sed -i "s/\#debug = true/\n\n\#debug = true\n\nnotification_driver = messagingv2\nenabled_backends = ceph\nglance_api_version = 2\nbackup_driver = cinder\.backup\.drivers\.ceph\nbackup_ceph_conf = \/etc\/ceph\/ceph\.conf\nbackup_ceph_user = cinder-backup\nbackup_ceph_chunk_size = 134217728\nbackup_ceph_pool = backups\nbackup_ceph_stripe_unit = 0\nbackup_ceph_stripe_count = 0\nrestore_discard_excess_bytes = true\nhost=ceph/g" /etc/cinder/cinder.conf
+
+cat >> /etc/cinder/cinder.conf <<EOF
+
+[ceph]
+volume_driver = cinder.volume.drivers.rbd.RBDDriver
+volume_backend_name = ceph
+rbd_pool = volumes
+rbd_ceph_conf = /etc/ceph/ceph.conf
+rbd_flatten_volume_from_snapshot = false
+rbd_max_clone_depth = 5
+rbd_store_chunk_size = 4
+rados_connect_timeout = -1
+rbd_user = cinder
+rbd_secret_uuid = $uuid1
+report_discard_supported = true
+
+EOF
+systemctl enable openstack-cinder-backup.service
+systemctl start openstack-cinder-backup.service
+
+systemctl restart openstack-cinder-api.service openstack-cinder-volume.service openstack-cinder-scheduler.service openstack-cinder-backup.service
+
+source /root/keystonerc &&  cinder type-create ceph
+source /root/keystonerc &&  cinder type-key ceph set volume_backend_name=ceph
+
+systemctl restart openstack-nova-compute
+
+
+scp /root/ceph-secret1.xml root@$compute:/root/
+ssh root@$compute "virsh secret-define --file /root/ceph-secret1.xml"
+ssh root@$compute "virsh secret-set-value --secret $uuid1 --base64 $(cat /root/client.cinder)"
+ssh root@$compute "systemctl restart openstack-nova-compute"
+
+printf "======================================Config backend for Nova-Compute======================================\n"
+sleep 3
+
+cd /root/ceph_cluster/ ; ceph auth get-or-create client.nova mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images' -o /etc/ceph/ceph.client.nova.keyring
+
+cd /root/ceph_cluster/ ; ceph auth get-or-create client.nova | sudo tee /etc/ceph/ceph.client.nova.keyring
+cd /root/ceph_cluster/ ; ceph auth get-key client.nova | tee /root/client.nova
+
+chgrp nova /etc/ceph/ceph.client.nova.keyring
+chmod 0640 /etc/ceph/ceph.client.nova.keyring
+
+uuid2=`uuidgen`
+
+cat << EOF > /root/nova-ceph.xml
+<secret ephemeral="no" private="no">
+<uuid>$uuid2</uuid>
+<usage type="ceph">
+<name>client.nova secret</name>
+</usage>
+</secret>
+EOF
+
+virsh secret-define --file /root/nova-ceph.xml
+virsh secret-set-value --secret $uuid2 --base64 $(cat /root/client.nova)
+
+
+sed -i "s/\[libvirt\]/\[libvirt\]\nimages_rbd_pool=vms\nimages_type=rbd\nrbd_secret_uuid=$uuid2\nrbd_user=nova\nimages_rbd_ceph_conf = \/etc\/ceph\/ceph\.conf/g" /etc/nova/nova.conf
+
+systemctl restart openstack-nova-compute
+
+
+printf "======================================Config backend for Nova-Compute 2================================\n"
+sleep 3
+
+cd /root/ceph_cluster/ && ceph auth get-or-create client.nova | ssh $host_com tee /etc/ceph/ceph.client.nova.keyring
+cd /root/ceph_cluster/ && ceph auth get-key client.nova | ssh $host_com tee /root/client.nova
+
+ssh root@$compute "chgrp nova /etc/ceph/ceph.client.nova.keyring"
+ssh root@$compute "chmod 0640 /etc/ceph/ceph.client.nova.keyring"
+
+scp /root/nova-ceph.xml root@$compute:/root
+ssh root@$compute "virsh secret-define --file /root/nova-ceph.xml"
+ssh root@$compute "virsh secret-set-value --secret $uuid2 --base64 \$(cat /root/client.nova)"
+
+ssh root@$compute "sed -i 's/\[libvirt\]/\[libvirt\]\nimages_rbd_pool=vms\nimages_type=rbd\nrbd_secret_uuid=$uuid2\nrbd_user=nova\nimages_rbd_ceph_conf = \/etc\/ceph\/ceph\.conf/g' /etc/nova/nova.conf"
+
+ssh root@$compute "systemctl restart openstack-nova-compute"
+
+printf "======================================Status CEPH Cluster================================\n"
+sleep 3
+
+cd /root/ceph_cluster/ && ceph -s
+
+sleep 7
 
 }
-
 
 
 horizon_install(){
@@ -1409,15 +1743,13 @@ sed -i "s/\#bridge_mappings =/bridge_mappings = physnet1:br-ens37/g" $all_openvs
 
 printf "======================================Security group and permit icmp, ssh==========================\n"
 sleep 2
-source keystonerc && openstack security group create secgroup01
-source keystonerc && openstack security group rule create --protocol icmp --ingress secgroup01
-source keystonerc && openstack security group rule create --protocol tcp --dst-port 22:22 secgroup01
+source /root/keystonerc && openstack security group create secgroup01
+source /root/keystonerc && openstack security group rule create --protocol icmp --ingress secgroup01
+source /root/keystonerc && openstack security group rule create --protocol tcp --dst-port 22:22 secgroup01
 
 printf "======================================List rule=============================\n"
 sleep 2
-source keystonerc && openstack security group rule list
-
-
+source /root/keystonerc && openstack security group rule list
 
 ############################################################################################################
 
@@ -2016,7 +2348,7 @@ END
             vxlan_com
             key_private
 
-            cat >"info" << END
+            cat >"/root/info" << END
 ip controll: $controller
 ip compute: $compute
 ip storage: $storage
@@ -2040,14 +2372,21 @@ END
 
 
        7 )
-             printf "Updating. Please try again"
-
-             exit
+#             printf "Updating. Please try again"
+#
+#             exit
 
             controller=$ip
 
+
             echo "Enter IP Compute node: "
             read compute
+
+            echo "Enter IP CEPH1 node: "
+            read ceph1
+
+            echo "Enter IP CEPH2 node: "
+            read ceph2
 
             echo "Enter password admin: "
             read pass_admin
@@ -2074,7 +2413,17 @@ END
             ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
             ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$ceph1
+            ssh root@$ceph1 "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$ceph1 "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$ceph1 "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$ceph1 "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
+            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$ceph2
+            ssh root@$ceph2 "systemctl stop firewalld && systemctl disable firewalld"
+            ssh root@$ceph2 "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh root@$ceph2 "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh root@$ceph2 "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
             br_network
 		    requirements
@@ -2091,10 +2440,14 @@ END
 	        vxlan_all
             vxlan_com
             key_private
+            ### get url dashboard
+            ceph_dashboad=`cd /root/ceph_cluster/ ; ceph mgr services | cut -f4 -d '"'`
 
-            cat >"info" << END
+            cat >"/root/info" << END
 ip controll: $controller
 ip compute: $compute
+ip ceph1: $ceph1
+ip ceph2: $ceph2
 user: admin
 pass admin: $pass_admin
 pass root sql: $rootsql
@@ -2106,8 +2459,13 @@ Link dashboard http//$controller/dashboard
 domain: default
 user: admin
 password: $pass_admin
+Link dashboard ceph: $ceph_dashboad
+user: admin
+password: $pass_admin
+
 END
             printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
+            printf "\nLink dashboard $ceph_dashboad user: admin password: $pass_admin\n"
             printf "Install and config done, auto reboot\n"
             reboot;;
 
