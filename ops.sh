@@ -1506,7 +1506,7 @@ for disk1 in $ceph1_disk; do
 cd /root/ceph_cluster/ && ceph-deploy osd create --data $disk1 $host_osp1
 done
 
-for disk1 in $ceph1_disk; do
+for disk2 in $ceph2_disk; do
 cd /root/ceph_cluster/ && ceph-deploy osd create --data $disk2 $host_osp2
 done
 
@@ -2441,7 +2441,7 @@ END
             vxlan_com
             key_private
             ### get url dashboard
-            ceph_dashboad=`cd /root/ceph_cluster/ ; ceph mgr services | cut -f4 -d '"'`
+            ceph_dashboad=`cd /root/ceph_cluster/ ; ceph mgr services | cut -f4 -d '"' | grep https`
 
             cat >"/root/info" << END
 ip controll: $controller
