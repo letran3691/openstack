@@ -376,13 +376,12 @@ _**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
 
 ![image](https://user-images.githubusercontent.com/19284401/68775821-ae0e7980-0661-11ea-8b6a-9d299e21f8f0.png)
 
-Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE(CEPH backend)**
+- Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE(CEPH backend)**
+
+- **Chú ý: phần disk trên các node CEPH phải đặt đúng số lượng disk và dung lượng disk phải giống như trong sơ đồ trên**
 
 ![Untitled-1](https://user-images.githubusercontent.com/19284401/71481667-66b70380-2831-11ea-9a1e-d426a9d1fe98.jpg)
 
-
-
-- **Chú ý: phần disk trên các node CEPH phải đặt đúng số lượng disk và dung lượng disk phải giống như trong sơ đồ trên**
 
 
 - Cài đặt git
