@@ -412,6 +412,9 @@ _**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
 ![image](https://user-images.githubusercontent.com/19284401/71523371-45224e80-28fb-11ea-83e7-12c5efe84a4c.png)
 ![image](https://user-images.githubusercontent.com/19284401/71523442-aa763f80-28fb-11ea-8638-2d5ff44ab2eb.png)
 ![image](https://user-images.githubusercontent.com/19284401/71523639-7a7b6c00-28fc-11ea-9729-95b800cf937d.png)
+
+- Để truy cập vào dashboard ceph bạn cần add domain vào file host.
+
 ![image](https://user-images.githubusercontent.com/19284401/71523819-3a68b900-28fd-11ea-9d67-05801a1abe0e.png)
 ![image](https://user-images.githubusercontent.com/19284401/71523896-8b78ad00-28fd-11ea-84bc-62d63bf0562d.png)
 
