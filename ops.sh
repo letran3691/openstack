@@ -1564,9 +1564,9 @@ chmod 0640 /etc/ceph/ceph.client.glance.keyring
 
 sed -i "s/\[DEFAULT\]/\[DEFAULT\]\n\nshow_image_direct_url = True/g" /etc/glance/glance-api.conf
 
-sed -i 's/\[glance_store\]/\[glance_store\]\n\ndefault_store = rbd\nstores = file,http,rbd\nrbd_store_pool = images\nrbd_store_user = glance\nrbd_store_ceph_conf = \/etc\/ceph\/ceph.conf\nrbd_store_chunk_size = 8\n\n/g' /etc/glance/glance-api.conf
+sed -i 's/\[glance_store\]/\[glance_store\]\n\ndefault_store = rbd\nrbd_store_pool = images\nrbd_store_user = glance\nrbd_store_ceph_conf = \/etc\/ceph\/ceph.conf\nrbd_store_chunk_size = 8\n\n/g' /etc/glance/glance-api.conf
 
-#sed -i 's/stores = file,http/\#stores = file,http/g' /etc/glance/glance-api.conf
+sed -i 's/stores = file,http/stores = file,http,rbd/g' /etc/glance/glance-api.conf
 sed -i 's/default_store = file/\#default_store = file/g' /etc/glance/glance-api.conf
 sed -i 's/filesystem_store_datadir = \/var\/lib\/glance\/images\//#filesystem_store_datadir = \/var\/lib\/glance\/images\//g' /etc/glance/glance-api.conf
 
@@ -2465,7 +2465,7 @@ password: $pass_admin
 
 END
             printf "\nLink dashboard http://$controller/dashboard user: admin password: $pass_admin\n"
-            printf "\nLink dashboard $ceph_dashboad user: admin password: $pass_admin\n"
+            printf "\nLink dashboard CEPH $ceph_dashboad user: admin password: $pass_admin\n"
             printf "Install and config done, auto reboot\n"
             reboot;;
 

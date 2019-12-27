@@ -16,6 +16,8 @@
 
 - #### [3 NODE (CONTROLL-COMPUTE-STORAGE(mutil backend))](#2.6)
 
+- #### [2 NODE (CONTROLL-COMPUTE(CEPH backend))](#2.7)
+
 ### [III: BASIC COMMAND](#III)
 
 ### [IV: WEB GUID HORIZON ](#IV)
@@ -369,7 +371,50 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE - STORAGE(Multi backend)**
 ![image](https://user-images.githubusercontent.com/19284401/68776466-b1563500-0662-11ea-816a-14d4d604a781.png)
 ![image](https://user-images.githubusercontent.com/19284401/68402599-2e3e6600-01ae-11ea-8609-b5b717e47f75.png)
 
+### <a name="2.7"><a/>**2 NODE (CONTROLLER-COMPUTE(CEPH backend))**
+_**CHÚ Ý: RAM CỦA BẠN NÀO HƠN 12G THÌ HÃY THỰC HIỆN LAB NÀY**_
 
+![image](https://user-images.githubusercontent.com/19284401/68775821-ae0e7980-0661-11ea-8b6a-9d299e21f8f0.png)
+
+Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE(CEPH backend)**
+
+![Untitled-1](https://user-images.githubusercontent.com/19284401/71481667-66b70380-2831-11ea-9a1e-d426a9d1fe98.jpg)
+
+- **Chú ý: phần disk trên các node CEPH phải đặt đúng số lượng disk và dung lượng disk phải giống như trong sơ đồ trên**
+
+
+- Cài đặt git
+            
+            yum  -y install git
+             
+- Clone git
+
+            git clone https://github.com/letran3691/openstack.git             
+
+- Phân quyền file 
+            
+            chmod +x openstack/ops.sh
+            
+- Thực thi file
+
+            ./openstack/ops.sh
+
+
+![Capture](https://user-images.githubusercontent.com/19284401/71519292-932e5680-28e9-11ea-944e-f1bf95fb8e2a.JPG)
+
+ - Nhập đầy đủ các thông tin cần thiết như hình trên.
+ - Trong quá trình cài đặt sẽ có những lần được yêu cầu xác nhận ssh, các bạn **YES** rồi enter.
+ 
+![image](https://user-images.githubusercontent.com/19284401/71522864-17d4a100-28f9-11ea-93c1-f6420f8d9c88.png)
+![image](https://user-images.githubusercontent.com/19284401/71522880-2cb13480-28f9-11ea-9b1d-9b065236ed4b.png)
+![image](https://user-images.githubusercontent.com/19284401/71523155-56b72680-28fa-11ea-8f6b-70d352c62f9e.png)
+![image](https://user-images.githubusercontent.com/19284401/71523371-45224e80-28fb-11ea-83e7-12c5efe84a4c.png)
+![image](https://user-images.githubusercontent.com/19284401/71523442-aa763f80-28fb-11ea-8638-2d5ff44ab2eb.png)
+![image](https://user-images.githubusercontent.com/19284401/71523639-7a7b6c00-28fc-11ea-9729-95b800cf937d.png)
+![image](https://user-images.githubusercontent.com/19284401/71523819-3a68b900-28fd-11ea-9d67-05801a1abe0e.png)
+![image](https://user-images.githubusercontent.com/19284401/71523896-8b78ad00-28fd-11ea-84bc-62d63bf0562d.png)
+
+- Phần cấu hình CEPH backend kết thúc tại đây, chúc mọi người thành công.
 
 ### <a name="III"><a/>**III: BASIC COMMAND**
 
