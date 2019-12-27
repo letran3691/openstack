@@ -380,6 +380,8 @@ Sơ đồ LAB 3 **NODE CONTROLL - COMPUTE(CEPH backend)**
 
 ![Untitled-1](https://user-images.githubusercontent.com/19284401/71481667-66b70380-2831-11ea-9a1e-d426a9d1fe98.jpg)
 
+
+
 - **Chú ý: phần disk trên các node CEPH phải đặt đúng số lượng disk và dung lượng disk phải giống như trong sơ đồ trên**
 
 
