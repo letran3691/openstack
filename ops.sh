@@ -56,7 +56,7 @@ sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
 
 requirements(){
-printf "======================================install packet requirements=============================\n"
+printf "======================================install packet requirements======================     =======\n"
 sleep 3
 # Pre-Requirements
 yum -y install centos-release-openstack-queens epel-release
@@ -2159,6 +2159,20 @@ END
             ssh root@$storage "systemctl stop NetworkManager && systemctl disable NetworkManager"
             ssh root@$storage "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
             ssh root@$storage "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+
+########################################################################################
+            hostn_con=$(cat /etc/hostname)
+            hostn_com=$(ssh root@$compute "cat /etc/hostname")
+            hostn_sto=$(ssh root@$storage "cat /etc/hostname")
+
+            cat >> "/etc/hosts" << END
+$control    $hostn_con
+$compute    $hostn_com
+$storage    $hostn_sto
+END
+
+            scp /etc/hosts root@$compute:/etc/
+            scp /etc/hosts root@$storage:/etc/
 
             br_network
 		    requirements
