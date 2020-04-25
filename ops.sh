@@ -300,9 +300,16 @@ transport_url = rabbit://openstack:$pass_rabbitmq@$controller
 
 #neutron
 
-
 [api]
 auth_strategy = keystone
+
+
+# enable VNC
+[vnc]
+enabled = True
+server_listen = 0.0.0.0
+server_proxyclient_address = $my_ip
+novncproxy_base_url = http://$controller:6080/vnc_auto.html
 
 # Glance connection info
 [glance]
@@ -2069,17 +2076,17 @@ END
 	        printf "======================================Transfer key ssh====================================\n"
             sleep 2
 
-            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$compute
-            ssh root@$compute "systemctl stop firewalld && systemctl disable firewalld"
-            ssh root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
-            ssh root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
-            ssh root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+            ssh-copy-id -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa.pub root@$compute
+            ssh -o StrictHostKeyChecking=no root@$compute "systemctl stop firewalld && systemctl disable firewalld"
+            ssh -o StrictHostKeyChecking=no root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh -o StrictHostKeyChecking=no root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh -o StrictHostKeyChecking=no root@$compute "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
-            ssh-copy-id -i /root/.ssh/id_rsa.pub root@$network
-            ssh root@$network "systemctl stop firewalld && systemctl disable firewalld"
-            ssh root@$network "systemctl stop NetworkManager && systemctl disable NetworkManager"
-            ssh root@$network "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
-            ssh root@$network "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
+            ssh-copy-id -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa.pub root@$network
+            ssh -o StrictHostKeyChecking=no root@$network "systemctl stop firewalld && systemctl disable firewalld"
+            ssh -o StrictHostKeyChecking=no root@$network "systemctl stop NetworkManager && systemctl disable NetworkManager"
+            ssh -o StrictHostKeyChecking=no root@$network "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+            ssh -o StrictHostKeyChecking=no root@$network "sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config"
 
 
 	        requirements
@@ -2166,7 +2173,7 @@ END
             hostn_sto=$(ssh root@$storage "cat /etc/hostname")
 
             cat >> "/etc/hosts" << END
-$control    $hostn_con
+$controller    $hostn_con
 $compute    $hostn_com
 $storage    $hostn_sto
 END
