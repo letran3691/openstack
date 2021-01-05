@@ -81,6 +81,7 @@ systemctl start rabbitmq-server memcached
 systemctl enable rabbitmq-server memcached
 rabbitmqctl add_user openstack $pass_rabbitmq
 rabbitmqctl set_permissions openstack ".*" ".*" ".*"
+rabbitmqctl set_user_tags openstack administrator  #permission to administrator
 }
 
 keytone (){
@@ -89,10 +90,10 @@ printf "======================================Identity keytone==================
 sleep 2
 ################ Configure Keystone#1
 
-mysql -uroot -p123456 -e "create database keystone;"
-mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'localhost' identified by '"$pass_user_sql"';"
-mysql -uroot -p123456 -e "grant all privileges on keystone.* to keystone@'%' identified by '"$pass_user_sql"';"
-mysql -uroot -p123456 -e "flush privileges;"
+mysql -uroot -p$rootsql -e "create database keystone;"
+mysql -uroot -p$rootsql -e "grant all privileges on keystone.* to keystone@'localhost' identified by '"$pass_user_sql"';"
+mysql -uroot -p$rootsql -e "grant all privileges on keystone.* to keystone@'%' identified by '"$pass_user_sql"';"
+mysql -uroot -p$rootsql -e "flush privileges;"
 
 yum --enablerepo=centos-openstack-queens,epel -y install openstack-keystone openstack-utils python-openstackclient httpd mod_wsgi wget
 
@@ -156,10 +157,10 @@ source keystonerc && openstack endpoint create --region RegionOne image public h
 source keystonerc && openstack endpoint create --region RegionOne image internal http://$controller:9292
 source keystonerc && openstack endpoint create --region RegionOne image admin http://$controller:9292
 
-mysql -uroot -p123456 -e "create database glance;"
-mysql -uroot -p123456 -e "grant all privileges on glance.* to glance@'localhost' identified by '"$pass_user_sql"';"
-mysql -uroot -p123456 -e "grant all privileges on glance.* to glance@'%' identified by '"$pass_user_sql"';"
-mysql -uroot -p123456 -e "flush privileges;"
+mysql -uroot p$rootsql -e "create database glance;"
+mysql -uroot p$rootsql -e "grant all privileges on glance.* to glance@'localhost' identified by '"$pass_user_sql"';"
+mysql -uroot p$rootsql -e "grant all privileges on glance.* to glance@'%' identified by '"$pass_user_sql"';"
+mysql -uroot p$rootsql -e "flush privileges;"
 
 printf "======================================Install glance=============================================\n"
 sleep 2
@@ -261,19 +262,19 @@ source keystonerc && openstack endpoint create --region RegionOne placement inte
 source keystonerc && openstack endpoint create --region RegionOne placement admin http://$controller:8778
 
 
-mysql -u root -p123456 -e "create database nova;"
-mysql -u root -p123456 -e "grant all privileges on nova.* to nova@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "grant all privileges on nova.* to nova@'%' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "create database nova_api;"
-mysql -u root -p123456 -e "grant all privileges on nova_api.* to nova@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "grant all privileges on nova_api.* to nova@'%' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "create database nova_placement;"
-mysql -u root -p123456 -e "grant all privileges on nova_placement.* to nova@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "grant all privileges on nova_placement.* to nova@'%' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "create database nova_cell0;"
-mysql -u root -p123456 -e "grant all privileges on nova_cell0.* to nova@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "grant all privileges on nova_cell0.* to nova@'%' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "flush privileges;"
+mysql -u root p$rootsql -e "create database nova;"
+mysql -u root p$rootsql -e "grant all privileges on nova.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "grant all privileges on nova.* to nova@'%' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "create database nova_api;"
+mysql -u root p$rootsql -e "grant all privileges on nova_api.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "grant all privileges on nova_api.* to nova@'%' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "create database nova_placement;"
+mysql -u root p$rootsql -e "grant all privileges on nova_placement.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "grant all privileges on nova_placement.* to nova@'%' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "create database nova_cell0;"
+mysql -u root p$rootsql -e "grant all privileges on nova_cell0.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "grant all privileges on nova_cell0.* to nova@'%' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "flush privileges;"
 }
 
 nova_install_conf(){
@@ -431,10 +432,10 @@ source keystonerc && openstack endpoint create --region RegionOne network public
 source keystonerc && openstack endpoint create --region RegionOne network internal http://$controller:9696
 source keystonerc && openstack endpoint create --region RegionOne network admin http://$controller:9696
 
-mysql -u root -p123456 -e "create database neutron_ml2;"
-mysql -u root -p123456 -e "grant all privileges on neutron_ml2.* to neutron@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "grant all privileges on neutron_ml2.* to neutron@'%' identified by '"$pass_user_sql"';"
-mysql -u root -p123456 -e "flush privileges;"
+mysql -u root p$rootsql -e "create database neutron_ml2;"
+mysql -u root p$rootsql -e "grant all privileges on neutron_ml2.* to neutron@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "grant all privileges on neutron_ml2.* to neutron@'%' identified by '"$pass_user_sql"';"
+mysql -u root p$rootsql -e "flush privileges;"
 }
 ############################################## neutron ALL IN ONE ######################################
 neutron_server_all(){
@@ -484,6 +485,8 @@ region_name = RegionOne
 project_name = service
 username = nova
 password = $pass_project_user
+
+
 
 [oslo_concurrency]
 lock_path = \$state_path/tmp
@@ -925,7 +928,7 @@ sleep 2
 ssh root@$storage "systemctl start openstack-cinder-volume  && systemctl enable openstack-cinder-volume"
 
 
-################################### config disk lvm
+################################### sql disk lvm
 
 printf "======================================Format partition===========================================\n"
 sleep 2
@@ -1032,7 +1035,7 @@ ssh root@$nfs_server "yum -y install epel-release  && yum -y install nfs-utils l
 ssh root@$nfs_server "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
 ssh root@$nfs_server " echo '/volume_nfs $subnet_nfs/$netmask_nfs(rw,no_root_squash)' > /etc/exports"
 
-################################### config disk lvm
+################################### sql disk lvm
 
 printf "======================================Format partition NFS===========================================\n"
 sleep 2
@@ -1213,7 +1216,7 @@ ssh root@$nfs_server "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server
 ssh root@$nfs_server " echo '/volume_nfs $subnet_nfs/$netmask_nfs(rw,no_root_squash)' > /etc/exports"
 
 
-################################### config disk lvm
+################################### sql disk lvm
 
 printf "======================================Format partition NFS===========================================\n"
 sleep 2
