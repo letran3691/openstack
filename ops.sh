@@ -928,7 +928,7 @@ sleep 2
 ssh root@$storage "systemctl start openstack-cinder-volume  && systemctl enable openstack-cinder-volume"
 
 
-################################### sql disk lvm
+################################### config disk lvm
 
 printf "======================================Format partition===========================================\n"
 sleep 2
@@ -1035,7 +1035,7 @@ ssh root@$nfs_server "yum -y install epel-release  && yum -y install nfs-utils l
 ssh root@$nfs_server "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server/g' /etc/idmapd.conf"
 ssh root@$nfs_server " echo '/volume_nfs $subnet_nfs/$netmask_nfs(rw,no_root_squash)' > /etc/exports"
 
-################################### sql disk lvm
+################################### config disk lvm
 
 printf "======================================Format partition NFS===========================================\n"
 sleep 2
@@ -1216,7 +1216,7 @@ ssh root@$nfs_server "sed -i 's/\#Domain = local.domain.edu/Domain = $nfs_server
 ssh root@$nfs_server " echo '/volume_nfs $subnet_nfs/$netmask_nfs(rw,no_root_squash)' > /etc/exports"
 
 
-################################### sql disk lvm
+################################### config disk lvm
 
 printf "======================================Format partition NFS===========================================\n"
 sleep 2
