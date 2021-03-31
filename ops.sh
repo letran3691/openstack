@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+yum -y install epl-release; yum -y install net-tools
+
 ip=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f1  -d'/')
 netmask=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f2  -d'/')
 network=$(route -n | sort | tail -n5 | head -n1 | awk '{print $1}')
@@ -157,10 +159,10 @@ source keystonerc && openstack endpoint create --region RegionOne image public h
 source keystonerc && openstack endpoint create --region RegionOne image internal http://$controller:9292
 source keystonerc && openstack endpoint create --region RegionOne image admin http://$controller:9292
 
-mysql -uroot p$rootsql -e "create database glance;"
-mysql -uroot p$rootsql -e "grant all privileges on glance.* to glance@'localhost' identified by '"$pass_user_sql"';"
-mysql -uroot p$rootsql -e "grant all privileges on glance.* to glance@'%' identified by '"$pass_user_sql"';"
-mysql -uroot p$rootsql -e "flush privileges;"
+mysql -uroot -p$rootsql -e "create database glance;"
+mysql -uroot -p$rootsql -e "grant all privileges on glance.* to glance@'localhost' identified by '"$pass_user_sql"';"
+mysql -uroot -p$rootsql -e "grant all privileges on glance.* to glance@'%' identified by '"$pass_user_sql"';"
+mysql -uroot -p$rootsql -e "flush privileges;"
 
 printf "======================================Install glance=============================================\n"
 sleep 2
@@ -262,19 +264,19 @@ source keystonerc && openstack endpoint create --region RegionOne placement inte
 source keystonerc && openstack endpoint create --region RegionOne placement admin http://$controller:8778
 
 
-mysql -u root p$rootsql -e "create database nova;"
-mysql -u root p$rootsql -e "grant all privileges on nova.* to nova@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "grant all privileges on nova.* to nova@'%' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "create database nova_api;"
-mysql -u root p$rootsql -e "grant all privileges on nova_api.* to nova@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "grant all privileges on nova_api.* to nova@'%' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "create database nova_placement;"
-mysql -u root p$rootsql -e "grant all privileges on nova_placement.* to nova@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "grant all privileges on nova_placement.* to nova@'%' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "create database nova_cell0;"
-mysql -u root p$rootsql -e "grant all privileges on nova_cell0.* to nova@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "grant all privileges on nova_cell0.* to nova@'%' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "flush privileges;"
+mysql -u root -p$rootsql -e "create database nova;"
+mysql -u root -p$rootsql -e "grant all privileges on nova.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "grant all privileges on nova.* to nova@'%' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "create database nova_api;"
+mysql -u root -p$rootsql -e "grant all privileges on nova_api.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "grant all privileges on nova_api.* to nova@'%' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "create database nova_placement;"
+mysql -u root -p$rootsql -e "grant all privileges on nova_placement.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "grant all privileges on nova_placement.* to nova@'%' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "create database nova_cell0;"
+mysql -u root -p$rootsql -e "grant all privileges on nova_cell0.* to nova@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "grant all privileges on nova_cell0.* to nova@'%' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "flush privileges;"
 }
 
 nova_install_conf(){
@@ -432,10 +434,10 @@ source keystonerc && openstack endpoint create --region RegionOne network public
 source keystonerc && openstack endpoint create --region RegionOne network internal http://$controller:9696
 source keystonerc && openstack endpoint create --region RegionOne network admin http://$controller:9696
 
-mysql -u root p$rootsql -e "create database neutron_ml2;"
-mysql -u root p$rootsql -e "grant all privileges on neutron_ml2.* to neutron@'localhost' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "grant all privileges on neutron_ml2.* to neutron@'%' identified by '"$pass_user_sql"';"
-mysql -u root p$rootsql -e "flush privileges;"
+mysql -u root -p$rootsql -e "create database neutron_ml2;"
+mysql -u root -p$rootsql -e "grant all privileges on neutron_ml2.* to neutron@'localhost' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "grant all privileges on neutron_ml2.* to neutron@'%' identified by '"$pass_user_sql"';"
+mysql -u root -p$rootsql -e "flush privileges;"
 }
 ############################################## neutron ALL IN ONE ######################################
 neutron_server_all(){
@@ -2079,7 +2081,7 @@ END
 	        printf "======================================Transfer key ssh====================================\n"
             sleep 2
 
-            ssh-copy-id -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa.pub root@$compute
+            ssh-copy-id -o StrictHostKeyChecking=noStrictHostKeyChecking=no -i /root/.ssh/id_rsa.pub root@$compute
             ssh -o StrictHostKeyChecking=no root@$compute "systemctl stop firewalld && systemctl disable firewalld"
             ssh -o StrictHostKeyChecking=no root@$compute "systemctl stop NetworkManager && systemctl disable NetworkManager"
             ssh -o StrictHostKeyChecking=no root@$compute "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
