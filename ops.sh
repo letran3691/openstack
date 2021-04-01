@@ -4,7 +4,7 @@ yum -y install epl-release; yum -y install net-tools
 
 ip=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f1  -d'/')
 netmask=$(ip addr | grep 'state UP' -A2 | grep inet | head -n1 | awk '{print $2}' | cut -f2  -d'/')
-network=$(route -n | sort | tail -n5 | head -n1 | awk '{print $1}')
+network=$(route -n | sort | tail -n5 | head -n1 | awk '{print $2}')
 
 echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf
 echo "net.ipv6.conf.default.disable_ipv6 = 1"  >> /etc/sysctl.conf
@@ -35,7 +35,6 @@ netmask_br=$(ssh root@$network "ip addr | grep 'state UP' -A2 | grep inet | tail
 route_br=$(ssh root@$network "route -n | head -n4 | grep 0.0 | sort | tail -n1 | awk '{print \$2}'")
 
 inf1=$(ssh root@$network "ls /sys/class/net/ | awk '{ if (NR == 1) print \$0}'")
-
 inf2=$(ssh root@$network "ls /sys/class/net/ | awk '{ if (NR == 2) print \$0}'")
 
 echo "ip:" $ip
@@ -56,6 +55,7 @@ systemctl stop firewalld && systemctl disable firewalld
 systemctl stop NetworkManager && systemctl disable NetworkManager
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
+setenforce 0
 
 requirements(){
 printf "======================================install packet requirements======================     =======\n"
