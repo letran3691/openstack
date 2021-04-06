@@ -388,7 +388,7 @@ printf "======================================nova-compute======================
 #systemctl restart openstack-nova-compute
 systemctl enable openstack-nova-compute
 
-openstack compute service list
+source keystonerc && openstack compute service list
 }
 ############################################# nova ALL IN ONE################################################
 nova_compute(){
